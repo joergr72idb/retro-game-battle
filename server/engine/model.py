@@ -32,6 +32,12 @@ class Player:
     variant: str = ""       # compatibility id - defaults to platform.upper() if not given
     game_id: str = ""       # filled in once a GAME <n> selection is accepted
     alive: bool = True
+    fired: bool = False     # set by a "FIRE" command, consumed+reset by a turn-based game's tick()
+    input_queue: object = field(default_factory=list)  # raw MOVE letters since the last tick,
+    # UNFILTERED by the direction/reversal-guard logic below - for a game like Artillery
+    # where U/D/L/R mean "adjust angle/power" rather than "steer", not "which way am I
+    # currently heading" (Tron's reversal guard would otherwise block e.g. lowering the
+    # angle right after raising it, since D is OPPOSITE of U)
     trail: object = field(default_factory=list)  # Tron: set of cells; Snake: ordered list, head last
     pin: str = ""
     photo_task: object = field(default=None, repr=False)

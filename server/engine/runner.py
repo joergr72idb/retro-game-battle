@@ -51,6 +51,7 @@ async def drain_moves(players):
                 tokens = line.split()
                 if len(tokens) > 1 and tokens[1] in config.DIRS:
                     d = tokens[1]
+                    p.input_queue.append(d)
                     if d == config.OPPOSITE.get(p.direction):
                         log(f"[move] {p.platform}/{p.name}: {d} ignored (reverse of {p.direction})")
                     elif d != p.direction:
@@ -58,6 +59,11 @@ async def drain_moves(players):
                         p.direction = d
             elif line == "BYE":
                 p.alive = False
+            elif line == "FIRE":
+                # Generic trigger for turn-based games (e.g. games/artillery.py).
+                # Tron/Snake never send it and never read p.fired, so this is a
+                # no-op for them.
+                p.fired = True
 
 
 async def run_game(p1, p2, game):

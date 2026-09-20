@@ -120,6 +120,8 @@ async def http_handle_request(path: str) -> str:
         if token.startswith("GAME") and token[4:].isdigit():
             conn.feed_line(f"GAME {token[4:]}")
             was_selection = True
+        elif token == "FIRE":
+            conn.feed_line("FIRE")
         elif token in HTTP_DIR_MAP:
             conn.feed_line(HTTP_DIR_MAP[token])
 

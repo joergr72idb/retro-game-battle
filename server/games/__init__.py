@@ -6,6 +6,8 @@ then register it below - nothing in engine/ or display/ needs to change.
 
 from games.tron import TronGame
 from games.snake import SnakeGame
+from games.pong import PongGame
+from games.artillery import ArtilleryGame
 
 GAME_REGISTRY = {}
 
@@ -16,6 +18,8 @@ def _register(game):
 
 _register(TronGame())
 _register(SnakeGame())
+_register(PongGame())
+_register(ArtilleryGame())
 
 # Menu order = registration order above (Python dicts preserve insertion order).
 GAME_ORDER = list(GAME_REGISTRY.keys())

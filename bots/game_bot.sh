@@ -9,17 +9,26 @@
 # "GAME <n>". Everything from START onward is identical to tron_bot.sh.
 #
 # Usage:
-#   ./game_bot.sh [HOST] [PORT] [PLATFORM] [NAME] [VARIANT] [WANT_GAME] [TURN_CHANCE] [PIN]
+#   ./game_bot.sh [HOST] [PORT] [PLATFORM] [NAME] [VARIANT] [WANT_GAME] [TURN_CHANCE] [PIN] [FIRE_CHANCE]
 #
-# WANT_GAME: a game id (e.g. TRON, SNAKE) to select whenever offered a
-# choice - if empty, picks whatever's offered first. If WANT_GAME is set
-# but never appears in an offered list, the bot gives up (useful for
-# testing compatibility filtering: e.g. pass VARIANT=C64-WIC64 WANT_GAME=SNAKE
-# to confirm Snake is never even offered to a WiC64-variant client).
+# WANT_GAME: a game id (e.g. TRON, SNAKE, PONG, ARTILLERY) to select
+# whenever offered a choice - if empty, picks whatever's offered first. If
+# WANT_GAME is set but never appears in an offered list, the bot gives up
+# (useful for testing compatibility filtering: e.g. pass
+# VARIANT=C64-WIC64 WANT_GAME=SNAKE to confirm Snake is never even offered
+# to a WiC64-variant client, or WANT_GAME=ARTILLERY to confirm it IS).
+#
+# FIRE_CHANCE: for ARTILLERY - roughly 1-in-N idle polls sends "FIRE" (in
+# addition to the existing random MOVE turns, which double as angle/power
+# adjustments for this game - see games/artillery.py). Harmless no-op for
+# every other game, and harmless when it's not this bot's turn either
+# (the server just discards it) - so it's safe to always pass a value even
+# when playing Tron/Snake/Pong.
 #
 # Examples:
 #   ./game_bot.sh 127.0.0.1 6502 ATARI BotA ATARI TRON
-#   ./game_bot.sh 127.0.0.1 6502 C64 BotB C64-WIC64 SNAKE   # should be refused SNAKE
+#   ./game_bot.sh 127.0.0.1 6502 C64 BotB C64-WIC64 SNAKE      # should be refused SNAKE
+#   ./game_bot.sh 127.0.0.1 6502 C64 BotC C64-WIC64 ARTILLERY 12 "" 8  # should work fine
 #
 # NOTE: the server pairs the first compatible connections it sees for a
 # given game. Start only ONE bot if you want it to wait for a real client.
@@ -34,6 +43,7 @@ VARIANT="${5:-$PLATFORM}"
 WANT_GAME="${6:-}"
 TURN_CHANCE="${7:-12}"
 PIN="${8:-}"
+FIRE_CHANCE="${9:-0}"   # 0 = never fire (fine for every game except Artillery)
 POLL_INTERVAL="0.2"
 
 if ! command -v nc >/dev/null 2>&1; then
@@ -58,7 +68,13 @@ fi
 CURDIR="R"
 STARTED=0
 IDLE_COUNT=0
-MAX_IDLE=150
+# 600 * 0.2s = 120s of total silence before giving up. Needs to be generous:
+# this protocol deliberately sends the client NOTHING during play (the
+# server-side display is the only spectator view - see docs/protocol.md) -
+# a long game (e.g. a 5-point Pong match with two non-blocking bots
+# measured at ~68s/~274 ticks in testing) is genuinely silent the whole
+# time, not stalled.
+MAX_IDLE=600
 
 # Parses "n id1:label1 id2:label2 ..." (the tail of a WAIT GAMES / ERR
 # INCOMPATIBLE GAMES line) and sends a GAME <n> selection. Returns 1 (and
@@ -162,6 +178,9 @@ while true; do
             NEWDIR="${OPTS[$(( RANDOM % ${#OPTS[@]} ))]}"
             CURDIR="$NEWDIR"
             send "MOVE $NEWDIR"
+        fi
+        if [ "$STARTED" -eq 1 ] && [ "$FIRE_CHANCE" -gt 0 ] && [ $(( RANDOM % FIRE_CHANCE )) -eq 0 ]; then
+            send "FIRE"
         fi
     fi
 done
