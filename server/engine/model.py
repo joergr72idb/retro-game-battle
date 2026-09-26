@@ -14,6 +14,7 @@ Changes from the reference:
 import asyncio
 import csv
 import os
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -43,6 +44,8 @@ class Player:
     photo_task: object = field(default=None, repr=False)
     game_state: object = field(default=None, repr=False)  # opaque per-round extra state (e.g. shared Snake food)
     inbuf: object = field(default_factory=lambda: LineBuffer(), repr=False)
+    pending_moves: list = field(default_factory=list, repr=False)  # [(apply_at, direction), ...]
+    # for config.ATARI_LATENCY_EQUALIZER, see engine/runner.py's drain_moves()
 
 
 class Stats:
@@ -143,9 +146,15 @@ def append_result_to_csv(game_id: str, p1: "Player", p2: "Player", result: str,
         print(f"[stats] couldn't write result to {config.RESULTS_CSV_PATH}: {e}")
 
 
-def log(msg: str) -> None:
-    """Like print(), additionally appends msg to LOG_FILE_PATH."""
-    print(msg)
+def log(msg: str, color: str | None = None) -> None:
+    """Like print(), additionally appends msg to LOG_FILE_PATH. color wraps
+    the CONSOLE copy only (e.g. config.MOVE_LOG_COLOR) in an ANSI escape -
+    skipped when stdout isn't a real terminal, and the log file always gets
+    the plain text either way."""
+    if color and sys.stdout.isatty():
+        print(f"{color}{msg}{config.ANSI_RESET}")
+    else:
+        print(msg)
     try:
         with open(config.LOG_FILE_PATH, "a", encoding="utf-8") as f:
             f.write(msg + "\n")

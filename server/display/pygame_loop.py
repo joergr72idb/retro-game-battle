@@ -1,7 +1,7 @@
 """
 pygame display loop - ported from
 retro-tron-battle/server/tron_server.py's pygame_loop(). The HUD, side
-panels, waiting-screen (scroll/highscore/tribute/greeting), countdown and
+panels, waiting-screen (scroll/highscore/tribute), countdown and
 end overlays, and footer are all already game-agnostic and are unchanged
 here. The one Tron-shaped piece, draw_trail(), is kept as a generic
 draw_body() (mechanically identical: filled squares + a highlighted head -
@@ -63,7 +63,6 @@ def pygame_loop():
     scroll_loop_count = 0
     highscore_shown_until = 0.0
     tribute_shown_until = 0.0
-    greeting_shown_until = 0.0
 
     image_cache = {}
 
@@ -228,23 +227,6 @@ def pygame_loop():
                 screen.blit(line_surf, line_surf.get_rect(centerx=col_cx, top=y))
                 y += line_surf.get_height() + 2
 
-    def draw_greeting():
-        cx = config.FIELD_X + (config.GRID_W * config.CELL) // 2
-        y = config.HUD_HEIGHT + 40
-
-        img = load_scaled(config.GREETING_IMAGE, config.GRID_W * config.CELL - 160, 340)
-        if img:
-            rect = img.get_rect(centerx=cx, top=y)
-            screen.blit(img, rect)
-            y = rect.bottom + 30
-        else:
-            y += 30
-
-        for line in wrap_text(config.GREETING_TEXT, tribute_title_font, config.GRID_W * config.CELL - 80):
-            line_surf = tribute_title_font.render(line, True, (255, 220, 80))
-            screen.blit(line_surf, line_surf.get_rect(centerx=cx, top=y))
-            y += line_surf.get_height() + 6
-
     def draw_body(cells, plat, head):
         color = color_for(plat)
         for (gx, gy) in cells:
@@ -322,11 +304,6 @@ def pygame_loop():
             elif waiting_mode == "tribute":
                 draw_tribute()
                 if time.monotonic() >= tribute_shown_until:
-                    waiting_mode = "greeting"
-                    greeting_shown_until = time.monotonic() + config.GREETING_DURATION
-            elif waiting_mode == "greeting":
-                draw_greeting()
-                if time.monotonic() >= greeting_shown_until:
                     waiting_mode = "scroll"
             else:
                 scroll_x -= config.SCROLL_SPEED

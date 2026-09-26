@@ -9,6 +9,7 @@ tick" duel.
 """
 
 import asyncio
+import random
 import time
 from datetime import datetime
 
@@ -26,9 +27,34 @@ async def resolve_photo(p, timeout: float = 3.0):
         return None
 
 
+def _apply_move(p, d: str):
+    """Actually applies a MOVE: raw input_queue entry plus the reverse-guarded
+    direction change (with logging) - split out of drain_moves() so
+    ATARI_LATENCY_EQUALIZER can call it late, once a delayed Atari move
+    comes due, instead of right when the MOVE line is read."""
+    p.input_queue.append(d)
+    if d == config.OPPOSITE.get(p.direction):
+        log(f"[move] {p.platform}/{p.name}: {d} ignored (reverse of {p.direction})",
+            color=config.MOVE_LOG_COLOR)
+    elif d != p.direction:
+        log(f"[move] {p.platform}/{p.name}: {p.direction} -> {d}", color=config.MOVE_LOG_COLOR)
+        p.direction = d
+
+
 async def drain_moves(players):
     """Non-blockingly reads and applies any pending MOVE/BYE commands for
-    each player - ported verbatim from the reference."""
+    each player - ported from the reference, including its Atari
+    input-latency equalizer (delayed moves are applied here once due)."""
+    now = time.monotonic()
+    for p in players:
+        if p.pending_moves:
+            due = [m for m in p.pending_moves if m[0] <= now]
+            if due:
+                due.sort(key=lambda m: m[0])
+                p.pending_moves = [m for m in p.pending_moves if m[0] > now]
+                for _, d in due:
+                    _apply_move(p, d)
+
     for p in players:
         try:
             data = await asyncio.wait_for(p.reader.read(256), timeout=0.01)
@@ -51,12 +77,11 @@ async def drain_moves(players):
                 tokens = line.split()
                 if len(tokens) > 1 and tokens[1] in config.DIRS:
                     d = tokens[1]
-                    p.input_queue.append(d)
-                    if d == config.OPPOSITE.get(p.direction):
-                        log(f"[move] {p.platform}/{p.name}: {d} ignored (reverse of {p.direction})")
-                    elif d != p.direction:
-                        log(f"[move] {p.platform}/{p.name}: {p.direction} -> {d}")
-                        p.direction = d
+                    if config.ATARI_LATENCY_EQUALIZER and p.platform == "ATARI":
+                        delay = random.uniform(config.ATARI_LATENCY_MIN, config.ATARI_LATENCY_MAX)
+                        p.pending_moves.append((time.monotonic() + delay, d))
+                    else:
+                        _apply_move(p, d)
             elif line == "BYE":
                 p.alive = False
             elif line == "FIRE":

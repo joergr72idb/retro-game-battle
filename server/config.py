@@ -11,7 +11,7 @@ import os
 # =============================================================================
 # VERSION - increment on every content change (shown in console + window)
 # =============================================================================
-SERVER_BUILD = 1
+SERVER_BUILD = 2
 # =============================================================================
 
 # =============================================================================
@@ -48,6 +48,17 @@ CSV_FIELDNAMES = ["timestamp", "game", "p1_platform", "p1_name", "p2_platform", 
 # =============================================================================
 
 LOG_FILE_PATH = os.path.join(BASE_DIR, "game_battle_server.log")  # <-- EDIT
+
+# ANSI color for steering ([move]) lines on the console, e.g. for a second
+# monitor showing this terminal next to the pygame playfield - makes
+# steering easy to spot among the other log lines. Never written to
+# LOG_FILE_PATH, just the console.
+# <-- EDIT: None disables coloring; other options: ANSI_CYAN, ANSI_GREEN
+ANSI_YELLOW = "\033[93m"
+ANSI_CYAN = "\033[96m"
+ANSI_GREEN = "\033[92m"
+ANSI_RESET = "\033[0m"
+MOVE_LOG_COLOR = ANSI_YELLOW
 
 # =============================================================================
 # EVENT PHOTO / LOGO CONFIGURATION
@@ -92,15 +103,26 @@ TRIBUTE_ENTRIES = [  # (image, credit text, url to display) - <-- EDIT for your 
 ]
 # =============================================================================
 
-GREETING_IMAGE = os.path.join(BASE_DIR, "assets/logos/greetings/greeting.jpg")  # <-- EDIT
-GREETING_TEXT = "THANKS A LOT!"  # <-- EDIT
-GREETING_DURATION = 20
-# =============================================================================
-
 GRID_W = 50
 GRID_H = 30
 TICK_RATE = 4  # ticks/sec = 250ms/tick - see retro-tron-battle/CLAUDE.md for the
 # per-platform HTTP-polling latency measurements that motivated this value.
+
+# =============================================================================
+# ATARI INPUT-LATENCY EQUALIZER - ported from retro-tron-battle (see its
+# CLAUDE.md, "Atari input-latency equalizer"). Atari/FujiNet is the only
+# client on a persistent raw TCP connection, so a MOVE reaches the server
+# essentially instantly, while Meatloaf/CPC only get a fresh direction
+# through every ~1-2 ticks (HTTP-poll round-trip ~300ms/~550ms). Every
+# MOVE from an Atari player is held back by a random delay drawn from
+# [ATARI_LATENCY_MIN, ATARI_LATENCY_MAX] before it's applied (both to
+# direction and to input_queue), in every game. Server-side only, no client
+# change. Starting values copied from the reference, not yet playtested.
+# =============================================================================
+ATARI_LATENCY_EQUALIZER = True  # <-- EDIT: False = off, Atari reacts instantly again
+ATARI_LATENCY_MIN = 0.25        # <-- EDIT: seconds, minimum artificial delay per move
+ATARI_LATENCY_MAX = 0.45        # <-- EDIT: seconds, maximum artificial delay per move
+# =============================================================================
 
 CELL = 18
 HUD_HEIGHT = 120

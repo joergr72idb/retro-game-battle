@@ -51,6 +51,10 @@ document's hardware/platform lessons (PETSCII case-folding, reserved
 BASIC keywords, joystick port quirks, `RUN`-not-`GOTO` restarts, and so
 on) all still apply here and aren't repeated in this repo.
 
+## Thanks
+
+Hans has developed the fotofix idea - many thanks from here!
+
 ## Not in this pass
 
 - Pong and a Gorilla-style artillery game (see `docs/protocol.md`'s

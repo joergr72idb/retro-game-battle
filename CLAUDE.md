@@ -65,6 +65,21 @@ the server-side parser already tolerates surrounding whitespace there
 but keep it in mind if `STR$()` is ever used for something URL-bound on
 any client in the future.
 
+## Ported from the reference after the fork (2026-09-26)
+
+- **Atari input-latency equalizer** (`ATARI_LATENCY_EQUALIZER` and
+  friends in `server/config.py`, applied in `engine/runner.py`'s
+  `drain_moves()`) - same idea and starting values as the reference, see
+  its CLAUDE.md. Here it holds back the whole Atari MOVE (both
+  `direction` and the raw `input_queue` entry), so it applies to every
+  game, not just Tron. `FIRE` is **not** delayed (the reference has no
+  `FIRE`); revisit if Atari turns out to have an edge in Artillery.
+  Not yet playtested.
+- Fourth waiting-screen view (fotofix/greeting thank-you) removed, along
+  with its image asset - cycle is now scroll -> highscore -> tribute.
+- `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).
+- Hans has developed the fotofix idea - many thanks from here!
+
 ## Testing status
 
 - **Engine (all of `server/engine/` and `server/games/`):** exercised
