@@ -1,0 +1,72 @@
+digraph visitor_flow {
+  rankdir=TB;
+  bgcolor="white";
+  fontname="Helvetica";
+  labelloc="t";
+  fontsize=20;
+  label="Retro Game Battle — Visitor Flow (PAP)\n\n";
+  node [fontname="Helvetica", fontsize=12, margin="0.15,0.1"];
+  edge [fontname="Helvetica", fontsize=10];
+  nodesep=0.5;
+  ranksep=0.35;
+
+  start   [label="START\n(retro computer powered on,\nclient program running)", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
+  pin     [label="Enter visitor PIN\n(or press ENTER to skip)", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  connect [label="Client connects to the server\nover the computer's WiFi add-on\n(FujiNet / Meatloaf / WiC64 / M4)", shape=box, style=filled, fillcolor="#ffffff"];
+  wait_dec [label="Someone already waiting\nfor a game this computer\ncan play?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+  menu    [label="Show \"PICK A GAME\" menu\n(only games this computer\ncan play, e.g. WiC64:\nTron + Artillery only)", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  choose  [label="Type the number\nof the game", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  show_wait [label="Show\n\"WAITING FOR OPPONENT...\"", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  opp_dec [label="Opponent\njoined?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+  countdown [label="Countdown on the big screen:\n3, 2, 1, GO!", shape=box, style=filled, fillcolor="#ffffff"];
+  game_dec [label="Which game?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+
+  tron    [label="TRON\nsteer the lightcycle;\ncrash into a wall or\na trail = lose", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  snake   [label="SNAKE\nsteer, eat food to grow;\ncrash into a wall or\na snake = lose", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  pong    [label="PONG\nup / down moves the paddle;\nfirst to 5 points wins", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  arty    [label="ARTILLERY\ntake turns: up/down = angle,\nleft/right = power, FIRE;\nfirst hit wins", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+
+  over_dec [label="Game over?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+  result_dec [label="Exactly one\nwinner?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+  show_win [label="Show \"<PLATFORM> WINS!\"\n+ winner's photo + updated\nscore for this game", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  show_draw [label="Show \"DRAW —\nSIMULTANEOUS CRASH!\"\n+ updated score", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  restart [label="Client restarts itself,\nready for the next visitor", shape=box, style=filled, fillcolor="#ffffff"];
+  end_    [label="END\n(back to START)", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
+
+  start -> pin -> connect -> wait_dec;
+  wait_dec -> menu [label="no"];
+  menu -> choose -> show_wait -> opp_dec;
+  opp_dec -> opp_dec [label="no, keeps polling"];
+  opp_dec -> countdown [label="yes"];
+  wait_dec -> countdown [label="yes: joins that game,\nno menu"];
+  countdown -> game_dec;
+  game_dec -> tron;
+  game_dec -> snake;
+  game_dec -> pong;
+  game_dec -> arty;
+  { rank=same; tron -> snake -> pong -> arty [style=invis]; }
+  tron -> over_dec;
+  snake -> over_dec;
+  pong -> over_dec;
+  arty -> over_dec;
+  over_dec -> game_dec [label="no, keep playing", tailport=w, headport=w];
+  over_dec -> result_dec [label="yes"];
+  result_dec -> show_win [label="yes"];
+  result_dec -> show_draw [label="no, both crashed\n(Tron / Snake only)"];
+  show_win -> restart;
+  show_draw -> restart;
+  restart -> end_;
+
+  subgraph cluster_legend {
+    label="PAP symbols";
+    fontsize=11;
+    style=filled;
+    fillcolor="#f7f7f7";
+    color="#999999";
+    l_term [label="Start / End", shape=box, style="rounded,filled", fillcolor="#dbe7f7", fontsize=10, width=1.3, height=0.4];
+    l_proc [label="Process step", shape=box, fillcolor="#ffffff", style=filled, fontsize=10, width=1.3, height=0.4];
+    l_io   [label="Screen output /\njoystick input", shape=parallelogram, style=filled, fillcolor="#fdf1cf", fontsize=10, width=1.3, height=0.4];
+    l_dec  [label="Decision", shape=diamond, style=filled, fillcolor="#dff2e1", fontsize=10, width=1.3, height=0.5];
+    l_term -> l_proc -> l_io -> l_dec [style=invis];
+  }
+}

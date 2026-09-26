@@ -34,6 +34,13 @@ simulates a client over TCP, including the game-selection step - see the
 script's own header comment for examples (including how to exercise the
 compatibility-filtering behavior with a `C64-WIC64` variant).
 
+## Docs
+
+- `docs/protocol.md` - the wire protocol (source of truth)
+- `docs/pap_diagrams.pdf` - PAP flowcharts for explaining the games to
+  visitors (page 1) and the server logic (page 2); regenerate with
+  `docs/pap_src/build.sh` from the `.dot` sources there
+
 ## Clients
 
 - `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (TCP)
