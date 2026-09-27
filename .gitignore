@@ -4,3 +4,7 @@ photo_cache/
 game_results.csv
 game_battle_server.log
 .DS_Store
+
+# local C64 test builds (petcat output), not tracked
+clients/c64/rgb.prg
+clients/c64/rgbwic.prg
