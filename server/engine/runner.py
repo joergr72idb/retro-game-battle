@@ -10,6 +10,7 @@ tick" duel.
 
 import asyncio
 import random
+import statistics
 import time
 from datetime import datetime
 
@@ -89,9 +90,18 @@ async def drain_moves(players):
                 tokens = line.split()
                 if len(tokens) > 1 and tokens[1] in config.DIRS:
                     d = tokens[1]
-                    if config.ATARI_LATENCY_EQUALIZER and p.platform == "ATARI":
+                    if p.eq_delay is not None:
+                        delay = p.eq_delay
+                    elif config.ATARI_LATENCY_EQUALIZER and p.platform == "ATARI":
                         delay = random.uniform(config.ATARI_LATENCY_MIN, config.ATARI_LATENCY_MAX)
-                        p.pending_moves.append((time.monotonic() + delay, d))
+                    else:
+                        delay = 0.0
+                    if delay > 0 or p.pending_moves:
+                        # never overtake a move that's still waiting
+                        apply_at = time.monotonic() + delay
+                        if p.pending_moves:
+                            apply_at = max(apply_at, max(m[0] for m in p.pending_moves))
+                        p.pending_moves.append((apply_at, d))
                     else:
                         _apply_move(p, d)
             elif line == "BYE":
@@ -103,8 +113,81 @@ async def drain_moves(players):
                 p.fired = True
 
 
+def _tick_gaps(p):
+    """/tick intervals of an HTTP player (engine/net_http.py's
+    HTTPPlayerConn), None for raw TCP - duck-typed, since importing
+    net_http here would be an import cycle via engine/pairing.py."""
+    return getattr(p.reader, "tick_gaps", None)
+
+
+def measured_input_delay(p):
+    """Returns (effective input delay in s, median poll interval in s or
+    None for raw TCP) for the dynamic equalizer, or None if an HTTP
+    client hasn't polled often enough since GAME START to tell."""
+    gaps = _tick_gaps(p)
+    if gaps is None:
+        return config.EQ_TCP_DELAY, None
+    if len(gaps) < config.EQ_MIN_SAMPLES:
+        return None
+    poll = statistics.median(gaps)
+    return config.EQ_POLL_FACTOR * poll, poll
+
+
+def setup_equalizer(p1, p2):
+    """Called once per match, right before play starts: measures both
+    players and sets eq_delay on both (the faster one gets the difference,
+    the other 0), or leaves both at None (= static Atari rule) if a
+    measurement is missing. See config.DYNAMIC_LATENCY_EQUALIZER."""
+    m1, m2 = measured_input_delay(p1), measured_input_delay(p2)
+
+    def desc(p, m):
+        if m is None:
+            return f"{p.platform}/{p.name} not measured"
+        eff, poll = m
+        return (f"{p.platform}/{p.name} poll {poll * 1000:.0f} ms -> {eff * 1000:.0f} ms"
+                if poll is not None else f"{p.platform}/{p.name} TCP -> {eff * 1000:.0f} ms")
+
+    if m1 is None or m2 is None:
+        fallback = (f"static rule for this match (Atari {config.ATARI_LATENCY_MIN}-"
+                    f"{config.ATARI_LATENCY_MAX} s)"
+                    if config.ATARI_LATENCY_EQUALIZER else "no equalizing this match")
+        log(f"[equalizer] {desc(p1, m1)}, {desc(p2, m2)} - {fallback}")
+        return
+
+    diff = m1[0] - m2[0]
+    delay = min(abs(diff), config.EQ_MAX_DELAY)
+    if delay < config.EQ_MIN_DELAY:
+        delay = 0.0
+    faster = p2 if diff > 0 else p1
+    for p in (p1, p2):
+        p.eq_delay = delay if p is faster else 0.0
+    what = f"{faster.platform}/{faster.name} +{delay * 1000:.0f} ms" if delay else "nobody delayed"
+    log(f"[equalizer] {desc(p1, m1)}, {desc(p2, m2)} => {what}"
+        + (" (capped)" if abs(diff) > config.EQ_MAX_DELAY else ""))
+
+
+def log_ingame_polls(players, since):
+    """Game-end diagnostic: median /tick interval per HTTP player during
+    the actual match (samples after index since[p]), to compare with what
+    the equalizer measured beforehand."""
+    parts = []
+    for p in players:
+        gaps = _tick_gaps(p)
+        if gaps is not None:
+            gaps = gaps[since.get(id(p), 0):]
+            if gaps:
+                parts.append(f"{p.platform}/{p.name} {statistics.median(gaps) * 1000:.0f} ms "
+                             f"({len(gaps)} polls)")
+    if parts:
+        log("[equalizer] in-game poll median: " + ", ".join(parts))
+
+
 async def run_game(p1, p2, game):
     game.init_round(p1, p2)
+    for p in (p1, p2):
+        gaps = _tick_gaps(p)
+        if gaps is not None:
+            gaps.clear()  # measure from here, not the menu/wait
 
     await send(p1.writer, game.start_message(p1, p2, 1))
     await send(p2.writer, game.start_message(p1, p2, 2))
@@ -152,6 +235,10 @@ async def run_game(p1, p2, game):
         update_render(countdown=str(count))
         await pause_reading_moves(1.0)
 
+    if config.DYNAMIC_LATENCY_EQUALIZER:
+        setup_equalizer(p1, p2)
+    eq_since = {id(p): len(_tick_gaps(p)) for p in players if _tick_gaps(p) is not None}
+
     update_render(countdown="Go, get in there! Move!")
     await asyncio.sleep(0.6)
     update_render(phase="playing", countdown="")
@@ -168,6 +255,8 @@ async def run_game(p1, p2, game):
 
         elapsed = time.monotonic() - tick_start
         await asyncio.sleep(max(0.0, (1 / config.TICK_RATE) - elapsed))
+
+    log_ingame_polls(players, eq_since)
 
     if p1.alive and not p2.alive:
         winner = p1

@@ -46,6 +46,8 @@ class Player:
     inbuf: object = field(default_factory=lambda: LineBuffer(), repr=False)
     pending_moves: list = field(default_factory=list, repr=False)  # [(apply_at, direction), ...]
     # for config.ATARI_LATENCY_EQUALIZER, see engine/runner.py's drain_moves()
+    eq_delay: float | None = None  # fixed per-match delay from the dynamic
+    # equalizer (engine/runner.py's setup_equalizer()), None = static Atari rule
 
 
 class Stats:

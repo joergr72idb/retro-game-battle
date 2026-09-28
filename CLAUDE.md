@@ -85,6 +85,15 @@ any client in the future.
   game, not just Tron. `FIRE` is **not** delayed (the reference has no
   `FIRE`); revisit if Atari turns out to have an edge in Artillery.
   Not yet playtested.
+- **Dynamic pairwise latency equalizer** (server build 7, 2026-09-28,
+  `DYNAMIC_LATENCY_EQUALIZER`/`EQ_*` in `server/config.py`,
+  `setup_equalizer()` in `engine/runner.py`) - ported from the reference's
+  server build 18, same behavior and values, see its CLAUDE.md section of
+  the same name. Only difference: `runner.py` finds HTTP players by their
+  `tick_gaps` attribute instead of `isinstance(HTTPPlayerConn)` (importing
+  `net_http` there would be a cycle via `pairing.py`). The measurement
+  starts at GAME START, so time spent in the game menu doesn't count.
+  Like the static rule, it delays MOVE only, not `FIRE`.
 - Fourth waiting-screen view (fotofix/greeting thank-you) removed, along
   with its image asset - cycle is now scroll -> highscore -> tribute.
 - `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).

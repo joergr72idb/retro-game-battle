@@ -11,7 +11,7 @@ import os
 # =============================================================================
 # VERSION - increment on every content change (shown in console + window)
 # =============================================================================
-SERVER_BUILD = 6
+SERVER_BUILD = 7
 # =============================================================================
 
 # =============================================================================
@@ -154,6 +154,25 @@ TICK_RATE = 4  # ticks/sec = 250ms/tick - see retro-tron-battle/CLAUDE.md for th
 ATARI_LATENCY_EQUALIZER = True  # <-- EDIT: False = off, Atari reacts instantly again
 ATARI_LATENCY_MIN = 0.25        # <-- EDIT: seconds, minimum artificial delay per move
 ATARI_LATENCY_MAX = 0.45        # <-- EDIT: seconds, maximum artificial delay per move
+# =============================================================================
+
+# =============================================================================
+# DYNAMIC PAIRWISE LATENCY EQUALIZER - ported from retro-tron-battle (server
+# build 18, see its CLAUDE.md). Replaces the static Atari rule above per
+# match whenever both players can be measured: during the versus screen and
+# countdown every HTTP client's /tick interval is timed, effective input
+# delay = EQ_POLL_FACTOR x median poll (raw TCP: EQ_TCP_DELAY), and only the
+# FASTER player is held back by the difference, capped at EQ_MAX_DELAY,
+# fixed for the whole match (moves keep their order). Too few samples (or
+# False here) -> the static Atari rule applies for that match. Logged per
+# game as "[equalizer] ...", see engine/runner.py's setup_equalizer().
+# =============================================================================
+DYNAMIC_LATENCY_EQUALIZER = True  # <-- EDIT: False = static Atari rule above only
+EQ_POLL_FACTOR = 0.75   # <-- EDIT: effective delay per second of poll interval
+EQ_TCP_DELAY = 0.0      # <-- EDIT: seconds, effective delay of a raw TCP client
+EQ_MAX_DELAY = 0.45     # <-- EDIT: seconds, never hold anyone back longer
+EQ_MIN_DELAY = 0.02     # below this difference, nobody gets delayed
+EQ_MIN_SAMPLES = 3      # /tick intervals needed for a usable measurement
 # =============================================================================
 
 CELL = 18

@@ -31,6 +31,8 @@ class HTTPPlayerConn:
         self.platform = ""
         self.name = ""
         self.last_tick_at = None
+        self.tick_gaps = []  # seconds between /ticks since GAME START, for
+        # the dynamic equalizer (engine/runner.py's setup_equalizer())
 
     async def readline(self):
         return await self._inbox.get()
@@ -114,6 +116,7 @@ async def http_handle_request(path: str) -> str:
         if conn.last_tick_at is not None:
             gap_ms = (now - conn.last_tick_at) * 1000
             log(f"[tick-latency] {conn.platform}/{conn.name}: {gap_ms:.0f} ms since last /tick")
+            conn.tick_gaps.append(now - conn.last_tick_at)
         conn.last_tick_at = now
 
         was_selection = False
