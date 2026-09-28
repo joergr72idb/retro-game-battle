@@ -3,7 +3,7 @@
 ## `rgbclient.dsk`
 
 Schneider/Amstrad CPC disk image with the current CPC client
-(`RGB.BAS`, build 2), stored as a headerless ASCII file - load it with
+(`RGB.BAS`, build 3), stored as a headerless ASCII file - load it with
 `RUN"RGB"` (AMSDOS detects ASCII automatically; loading is a bit slower
 than tokenized BASIC). Regenerate after changing the client source:
 
