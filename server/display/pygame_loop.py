@@ -14,10 +14,12 @@ import colorsys
 import math
 import os
 import random
+import threading
 import time
 
 import config
 from engine.photo import event_logo_path
+from display.sound import build_sounds, build_music
 from engine.render import snapshot_render
 from games import GAME_REGISTRY
 
@@ -29,6 +31,7 @@ def color_for(platform: str):
 def pygame_loop():
     import pygame
 
+    pygame.mixer.pre_init(22050, -16, 1, 512)  # small buffer = low sound latency
     pygame.init()
     pygame.display.set_caption("Retro Game Battle")
     screen = pygame.display.set_mode((config.WINDOW_W, config.WINDOW_H))
@@ -340,6 +343,31 @@ def pygame_loop():
         vs.set_alpha(alpha)
         screen.blit(vs, versus_rect)
 
+    sounds = build_sounds(pygame, config.SOUND_VOLUME) if config.SOUND_ENABLED else {}
+
+    def sfx(name):
+        snd = sounds.get(name)
+        if snd:
+            snd.play()
+
+    # Music gets its own reserved mixer channel so effects never cut it off;
+    # it's synthesized in the background (~2 s) so the window comes up at once.
+    music = []
+    music_chan = None
+    if sounds and config.MUSIC_ENABLED:
+        pygame.mixer.set_reserved(1)
+        music_chan = pygame.mixer.Channel(0)
+        threading.Thread(target=lambda: music.append(build_music(pygame, config.MUSIC_VOLUME)),
+                         daemon=True).start()
+    music_next = 0.0
+    music_fading = False
+
+    prev_phase = "waiting"
+    prev_countdown = ""
+    slam_pending = False
+    fanfare_at = 0.0
+    fanfare_name = "win"
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -347,6 +375,42 @@ def pygame_loop():
                 running = False
 
         state = snapshot_render()
+
+        # --- Sound effects, triggered by what's on screen so they stay in
+        # sync with the pictures (see build_sounds) ---
+        now = time.monotonic()
+        if state["phase"] != prev_phase:
+            if state["phase"] == "versus":
+                sfx("slide")
+                slam_pending = True
+            elif state["phase"] == "ended":
+                sfx("crash")
+                fanfare_at = now + 0.9
+                fanfare_name = "draw" if "DRAW" in state["status"].upper() else "win"
+            prev_phase = state["phase"]
+        if slam_pending and state["phase"] == "versus" and now - state["versus_start"] >= 0.53:
+            sfx("slam")  # lands on the white flash / screen shake
+            slam_pending = False
+        if state["countdown"] != prev_countdown:
+            if state["countdown"] in ("3", "2", "1"):
+                sfx("beep")
+            elif state["countdown"]:
+                sfx("go")
+            prev_countdown = state["countdown"]
+        if fanfare_at and now >= fanfare_at:
+            sfx(fanfare_name)
+            fanfare_at = 0.0
+        if music_chan and music and music[0]:
+            if state["phase"] == "waiting":
+                if not music_chan.get_busy() and now >= music_next:
+                    music_chan.play(music[0])
+                    music_next = now + music[0].get_length() + config.MUSIC_GAP
+                music_fading = False
+            elif music_chan.get_busy() and not music_fading:
+                music_chan.fadeout(800)
+                music_fading = True
+                music_next = now + 3.0  # back on the waiting screen: start again soon
+
 
         screen.fill(config.HUD_BG_COLOR)
 

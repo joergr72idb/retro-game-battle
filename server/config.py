@@ -11,7 +11,7 @@ import os
 # =============================================================================
 # VERSION - increment on every content change (shown in console + window)
 # =============================================================================
-SERVER_BUILD = 3
+SERVER_BUILD = 5
 # =============================================================================
 
 # =============================================================================
@@ -36,6 +36,22 @@ SCROLL_COLOR_SPEED = 0.02
 
 SCROLL_LOOPS_BEFORE_HIGHSCORE = 2
 HIGHSCORE_DURATION = 20
+# =============================================================================
+
+# =============================================================================
+# SOUND - CHIP-STYLE EFFECTS, GENERATED AT STARTUP (NO SAMPLE FILES)
+# =============================================================================
+# One-shot effects only (no background loops): versus slide + slam,
+# countdown beeps + GO, crash, win/draw fanfare. Without a working audio
+# device the server just runs silent.
+SOUND_ENABLED = True     # <-- EDIT: False = no sound at all
+SOUND_VOLUME = 0.6       # <-- EDIT: master volume, 0.0 - 1.0
+# Attract music: an original chiptune (~36 s) that plays on the waiting
+# screen, then MUSIC_GAP seconds of silence before it repeats (so it
+# doesn't wear on everyone at the booth); fades out when a match starts.
+MUSIC_ENABLED = True     # <-- EDIT: False = effects only, no music
+MUSIC_VOLUME = 0.35      # <-- EDIT: 0.0 - 1.0, relative to the effects
+MUSIC_GAP = 20           # <-- EDIT: seconds of silence between repeats
 # =============================================================================
 
 # =============================================================================
