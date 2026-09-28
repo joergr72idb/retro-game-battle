@@ -13,6 +13,16 @@ None of that is repeated here - it all still applies unchanged, since
 the clients in this repo are direct extensions of that project's
 clients, not rewrites.
 
+## Fixes carried over from the reference (2026-09-28)
+
+Ported 1:1 from retro-tron-battle, where the details and the hardware
+verification are documented (its CLAUDE.md, CPC section): CPC screen
+saver (client build 3), key-buffer drain for joystick taps + no
+per-tick buffer clearing (build 4), `MEMORY &7FFF` for the HTTP buffer
+(build 5), and the server `drain_moves()` fix that reads all queued
+MOVEs per tick (server build 6). Verified on real hardware there only -
+this repo's own CPC client has not run on hardware yet.
+
 ## What's actually new here
 
 - `docs/protocol.md` - the wire protocol, including the parts that
