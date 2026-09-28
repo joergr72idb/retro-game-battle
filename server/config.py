@@ -11,7 +11,7 @@ import os
 # =============================================================================
 # VERSION - increment on every content change (shown in console + window)
 # =============================================================================
-SERVER_BUILD = 2
+SERVER_BUILD = 3
 # =============================================================================
 
 # =============================================================================
@@ -37,6 +37,22 @@ SCROLL_COLOR_SPEED = 0.02
 SCROLL_LOOPS_BEFORE_HIGHSCORE = 2
 HIGHSCORE_DURATION = 20
 # =============================================================================
+
+# =============================================================================
+# VERSUS SCREEN - SHOWN RIGHT AFTER PAIRING, BEFORE THE 3-2-1 COUNTDOWN
+# =============================================================================
+# Both visitor photos (platform logo if there's no photo) slide in big from
+# the left/right edges while pixelating into focus, a color-cycling "VS"
+# slams in between them with a flash and a screen shake, copper-style
+# raster bars roll behind, CRT scanlines on top - then the whole thing
+# fades away and reveals the playfield for the countdown. Clients don't
+# notice anything: they already got START and just keep polling, and
+# direction changes are read in the whole time (like in the countdown).
+VERSUS_SCREEN = True     # <-- EDIT: False = straight to the countdown, as before
+VERSUS_DURATION = 4.0    # <-- EDIT: seconds in total, including the fade-out
+VERSUS_FADE = 0.8        # <-- EDIT: seconds of that spent fading away
+# =============================================================================
+
 
 # =============================================================================
 # RESULTS LOG (CSV) - one shared file across all games, with a "game" column

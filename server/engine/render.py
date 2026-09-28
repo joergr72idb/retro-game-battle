@@ -12,7 +12,7 @@ import threading
 
 render_lock = threading.Lock()
 render_state = {
-    "phase": "waiting",          # waiting | countdown | playing | ended
+    "phase": "waiting",          # waiting | versus | countdown | playing | ended
     "status": "Waiting for challengers to connect...",
     "game_id": "",
     "p1_name": "", "p1_plat": "",
@@ -22,6 +22,7 @@ render_state = {
     "photo1": None, "photo2": None,
     "logo1": None, "logo2": None,
     "countdown": "",
+    "versus_start": 0.0,         # time.monotonic() when the versus screen began
     "games_played": 0,
     "wins": {},
     "draws": 0,
@@ -47,6 +48,7 @@ def snapshot_render():
             "photo1": render_state["photo1"], "photo2": render_state["photo2"],
             "logo1": render_state["logo1"], "logo2": render_state["logo2"],
             "countdown": render_state["countdown"],
+            "versus_start": render_state["versus_start"],
             "games_played": render_state["games_played"],
             "wins": dict(render_state["wins"]),
             "draws": render_state["draws"],

@@ -106,7 +106,8 @@ async def run_game(p1, p2, game):
     from engine.photo import logo_path_for  # local import avoids a module-load cycle with photo.py
 
     update_render(
-        phase="countdown",
+        phase="versus" if config.VERSUS_SCREEN else "countdown",
+        versus_start=time.monotonic(),
         status="",
         game_id=game.id,
         p1_name=p1.name, p1_plat=p1.platform,
@@ -121,14 +122,23 @@ async def run_game(p1, p2, game):
 
     players = [p1, p2]
 
-    for count in (3, 2, 1):
-        update_render(countdown=str(count))
-        deadline = time.monotonic() + 1.0
+    async def pause_reading_moves(seconds):
+        """Waits, but keeps reading direction changes (nothing gets lost)
+        and stops early if someone sends BYE."""
+        deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
             await drain_moves(players)
             if not (p1.alive and p2.alive):
                 break
             await asyncio.sleep(0.05)
+
+    if config.VERSUS_SCREEN:
+        await pause_reading_moves(config.VERSUS_DURATION)
+        update_render(phase="countdown")
+
+    for count in (3, 2, 1):
+        update_render(countdown=str(count))
+        await pause_reading_moves(1.0)
 
     update_render(countdown="Go, get in there! Move!")
     await asyncio.sleep(0.6)
