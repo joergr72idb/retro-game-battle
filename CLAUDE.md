@@ -93,7 +93,9 @@ any client in the future.
   `tick_gaps` attribute instead of `isinstance(HTTPPlayerConn)` (importing
   `net_http` there would be a cycle via `pairing.py`). The measurement
   starts at GAME START, so time spent in the game menu doesn't count.
-  Like the static rule, it delays MOVE only, not `FIRE`.
+  Like the static rule, it delays MOVE only, not `FIRE`. The reference
+  build was playtested as fair on real hardware on 2026-10-01 (all three
+  pairings, see its CLAUDE.md); this port itself not yet playtested.
 - Fourth waiting-screen view (fotofix/greeting thank-you) removed, along
   with its image asset - cycle is now scroll -> highscore -> tribute.
 - `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).
