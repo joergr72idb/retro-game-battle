@@ -16,13 +16,14 @@ assembly routine was written, see [`CLAUDE.md`](../../../CLAUDE.md).
 ## File
 
 `FOTOFIX.C000` must be on the same disk/SD2IEC image as
-`tron_c64_wic64_client.bas` (same filename, loaded via
+`game_battle_c64_wic64_client.bas` (same filename, loaded via
 `LOAD"FOTOFIX.C000",8,1`). Extracted from the `fotofix.d64` provided
 by Andreas Beermann (the original disk also contains `fotofix` — the
 complete FOTOFIX example program — and `rtbwic64`, an already-typed-in
 copy of our own WiC64 client for testing on real hardware). The
-complete original image is at
-[`disk-images/fotofix.d64`](../../../disk-images/fotofix.d64).
+complete original image is not part of this repo; it lives in the
+Retro Tron Battle repo at
+[`disk-images/c64/fotofix.d64`](https://github.com/joergr72idb/retro-tron-battle/blob/master/disk-images/c64/fotofix.d64).
 
 ## Known error string in the routine
 
