@@ -96,6 +96,16 @@ any client in the future.
   Like the static rule, it delays MOVE only, not `FIRE`. The reference
   build was playtested as fair on real hardware on 2026-10-01 (all three
   pairings, see its CLAUDE.md); this port itself not yet playtested.
+- **Stale waiting player check** (server build 8, 2026-10-12,
+  `stale_waiting_reason()`/`drop_stale_waiting()` in `engine/pairing.py`,
+  `WAITING_HTTP_STALE_S` in `server/config.py`) - ported from the
+  reference's server build 19, see its CLAUDE.md section "Stale waiting
+  player". Before every pairing (immediate match and after the menu
+  selection) dead entries are removed from `waiting_players`: same
+  platform + name joining again, closed connection, or an HTTP player
+  without `/tick` for 5 s. HTTP players are recognized by their
+  `joined_at` attribute (same import-cycle reason as above). Headless
+  test with simulated clients only (same four cases as the reference).
 - Fourth waiting-screen view (fotofix/greeting thank-you) removed, along
   with its image asset - cycle is now scroll -> highscore -> tribute.
 - `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).

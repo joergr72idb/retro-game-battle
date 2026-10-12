@@ -31,6 +31,7 @@ class HTTPPlayerConn:
         self.platform = ""
         self.name = ""
         self.last_tick_at = None
+        self.joined_at = time.monotonic()  # for pairing.stale_waiting_reason()
         self.tick_gaps = []  # seconds between /ticks since GAME START, for
         # the dynamic equalizer (engine/runner.py's setup_equalizer())
 

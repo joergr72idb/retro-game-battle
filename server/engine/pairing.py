@@ -13,6 +13,7 @@ not a full matrix.
 """
 
 import asyncio
+import time
 
 import config
 import games as games_module
@@ -24,6 +25,42 @@ MAX_SELECTION_RETRIES = 5
 
 lock = asyncio.Lock()
 waiting_players: dict[str, Player] = {}  # game_id -> the one player waiting for it
+
+
+def stale_waiting_reason(w: Player, platform: str, name: str) -> str:
+    """Says why waiting player w must not be paired with the newcomer (or
+    "" if it's fine). Ported from retro-tron-battle server build 19: at
+    CC2026 a client was paired with its own dead entry twice - the Atari
+    after a FujiNet WiFi dropout (TCP socket never closed) and the C64
+    after a restart (old HTTP session never polled again)."""
+    if w.platform == platform and w.name == name:
+        # Same machine joins again: the Atari sends nothing while waiting,
+        # so this is the only way to notice a silently lost FujiNet
+        # connection. (Two machines with the same default name and no PIN
+        # would replace each other.)
+        return "same client joined again"
+    if w.reader.at_eof():
+        return "connection closed"
+    joined_at = getattr(w.reader, "joined_at", None)  # HTTPPlayerConn only -
+    # duck-typed, importing net_http here would be an import cycle
+    if joined_at is not None:
+        idle = time.monotonic() - (w.reader.last_tick_at or joined_at)
+        if idle > config.WAITING_HTTP_STALE_S:
+            return f"no /tick for {idle:.1f} s"
+    return ""
+
+
+def drop_stale_waiting(platform: str, name: str):
+    """Removes dead entries from waiting_players. Call under `lock`."""
+    for gid, w in list(waiting_players.items()):
+        reason = stale_waiting_reason(w, platform, name)
+        if reason:
+            del waiting_players[gid]
+            log(f"[-] dropping waiting {w.platform}/{w.name} ({gid}): {reason}")
+            try:
+                w.writer.close()
+            except Exception:
+                pass
 
 
 def compatible_games_for(variant: str):
@@ -107,6 +144,7 @@ async def join(platform: str, name: str, variant: str, pin: str,
         entries = compatible_games_for(player.variant)
 
         async with lock:
+            drop_stale_waiting(platform, name)
             matched_game_id = None
             for gid in waiting_players:
                 if is_compatible(player.variant, gid):
@@ -150,6 +188,7 @@ async def join(platform: str, name: str, variant: str, pin: str,
         chosen_game_id = entries[selection - 1][0]
 
         async with lock:
+            drop_stale_waiting(platform, name)
             if chosen_game_id in waiting_players:
                 p1 = waiting_players.pop(chosen_game_id)
                 player.game_id = chosen_game_id

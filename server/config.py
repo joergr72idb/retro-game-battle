@@ -11,7 +11,7 @@ import os
 # =============================================================================
 # VERSION - increment on every content change (shown in console + window)
 # =============================================================================
-SERVER_BUILD = 7
+SERVER_BUILD = 8
 # =============================================================================
 
 # =============================================================================
@@ -173,6 +173,12 @@ EQ_TCP_DELAY = 0.0      # <-- EDIT: seconds, effective delay of a raw TCP client
 EQ_MAX_DELAY = 0.45     # <-- EDIT: seconds, never hold anyone back longer
 EQ_MIN_DELAY = 0.02     # below this difference, nobody gets delayed
 EQ_MIN_SAMPLES = 3      # /tick intervals needed for a usable measurement
+
+# A waiting HTTP player that hasn't polled /tick for this long is treated
+# as gone (reset, new RUN, WiFi lost) and dropped instead of being paired
+# (engine/pairing.py, stale_waiting_reason()). All HTTP clients keep
+# polling while they wait: CPC ~70 ms, Meatloaf ~340 ms, WiC64 ~1.3 s.
+WAITING_HTTP_STALE_S = 5.0
 # =============================================================================
 
 CELL = 18
