@@ -133,14 +133,12 @@ the wire are per-game, never global.
 ## Adding a new game
 
 Write `server/games/<name>.py` implementing the `GameModule` interface
-(`server/games/base.py`): `id`, `label`, `compatible_variants`,
-`init_round`, `tick`, `start_message`, `render_snapshot`, `draw_extra`.
-Register it in `server/games/__init__.py`. Nothing under `server/engine/`
-or `server/display/` needs to change, and no existing client needs
-changes either (the menu is server-generated).
+(`server/games/base.py`): `id`, `label`, `compatible_variants`, optionally
+`reverse_guard`, and `init_round`, `tick`, `start_message`,
+`render_snapshot`, `draw_extra`. Register it in `server/games/__init__.py`.
+Nothing under `server/engine/` or `server/display/` needs to change, and no
+client needs changes as long as the game uses `MOVE` and `FIRE` (the menu is
+server-generated) - but mind the menu line limits of the clients.
 
-Not yet implemented, left as a known gap: Pong (fits the existing
-tick/direction model, would need paddle-position `START` fields instead
-of head positions) and a Gorilla-style artillery game (does NOT fit this
-model - turn-based with angle/power input rather than continuous
-steering, needs a different client input scheme entirely).
+Step by step, with a complete example game and how to test it:
+**[`docs/howto-new-game.md`](howto-new-game.md)**.

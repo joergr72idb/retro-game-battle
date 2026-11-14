@@ -36,6 +36,7 @@ compatibility-filtering behavior with a `C64-WIC64` variant).
 ## Docs
 
 - `docs/protocol.md` - the wire protocol (source of truth)
+- `docs/howto-new-game.md` - how to write a new game for the server (interface, example, testing)
 - `docs/howto-devkits.md` - how to build the four development kits (Atari, C64, CPC, Apple II)
   and run each client in its emulator
 - `devkits/` - the four development kits themselves (build scripts, configs, our M4 library, samples)
