@@ -32,7 +32,7 @@ class SnakeGame:
     # WiC64's ~1280ms/poll (see retro-tron-battle/CLAUDE.md) makes food-grabbing
     # largely luck-based, unlike Tron's "just don't crash" - excluded for now,
     # revisit if TICK_RATE or WiC64 speed changes.
-    compatible_variants = {"ATARI", "C64", "CPC"}
+    compatible_variants = {"ATARI", "C64", "CPC", "APPLE2"}
 
     def init_round(self, p1, p2):
         y = config.GRID_H // 2

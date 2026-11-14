@@ -140,6 +140,15 @@ any client in the future.
   (`STRIG`, lines 302-306, before line 370's jump), C64/CPC C clients (button or Space).
 - `disk-images/c64/rgb.d64` and `cpc/rgb.dsk` hold the C clients built for 192.168.17.138.
 
+## Apple II (2026-11-14)
+
+- **`clients/apple2-tcp/`** - Apple //e enhanced + FujiNet (SmartPort), C with cc65 + fujinet-lib,
+  a ProDOS SYS program on a ProDOS 2.4.3 boot disk. Built and run with
+  `../development-kit-apple2-and-fujinet` (FujiNet Go Apple II emulator). Won a match there.
+- Snake and Pong now allow the `APPLE2` variant (Tron/Artillery had no restriction) - the
+  server has to be restarted to pick that up.
+- `rgbtcp.po` is not committed: it contains ProDOS 2.4.3, whose GitHub release repo states no licence.
+
 ## Testing status
 
 - **Engine (all of `server/engine/` and `server/games/`):** exercised

@@ -1,0 +1,26 @@
+# Apple II client over TCP (FujiNet) - C
+
+An Apple //e (enhanced) or later with a FujiNet on the SmartPort, speaking the raw TCP protocol the
+Atari/FujiNet client uses (`docs/protocol.md`, "Protocol 1"). A ProDOS SYS program
+(`RGBTCP.SYSTEM`) on a ProDOS boot disk (`rgbtcp.po`), which starts by itself.
+
+## Build
+
+Needs the Apple II development kit next to this repository (`../development-kit-apple2-and-fujinet`:
+cc65, fujinet-lib >= 5.1.1, cadius, ProDOS 2.4.3).
+
+```sh
+make                            # rgbtcp.po for the server 127.0.0.1 (the emulator on this Mac)
+make SERVER=192.168.17.138      # for a real Apple II: the server's LAN address (compiled in)
+```
+
+In FujiNet's CONFIG: mount `rgbtcp.po` in slot 1 and boot (ESC). PIN, game menu (1-4), joystick or
+arrow keys to steer, button 0 or **Space** to fire (Artillery). After the match: any key plays again.
+
+## Notes
+
+- `network_init()` first: on the Apple II it finds the FujiNet's network device on the SmartPort.
+- The boot disk contains ProDOS 2.4.3 (`PRODOS` + boot blocks, from the ProDOS-8 project's GitHub
+  releases). That repository states no licence, so `rgbtcp.po` is not committed here - build it.
+- Status: tested in FujiNet Go Apple II (AppleWin core + built-in FujiNet) 2026-11-14: menu, a
+  match, win. **Not yet run on real hardware.**

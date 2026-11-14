@@ -111,11 +111,11 @@ Declared as data per game module (`compatible_variants` on each
 
 ```
 TRON:  no restriction (None)      - proven fine even at WiC64's ~1280ms/poll
-SNAKE: {"ATARI", "C64", "CPC"}    - excludes C64-WIC64
+SNAKE, PONG: {"ATARI", "C64", "CPC", "APPLE2"} - exclude C64-WIC64
 ```
 
-The C clients in `clients/cpc-tcp/` and `clients/c64-tcp/` use this TCP protocol with the plain
-`CPC` / `C64` variants, so they get the same games as the BASIC (HTTP) clients of their platform.
+The C clients in `clients/cpc-tcp/`, `clients/c64-tcp/` and `clients/apple2-tcp/` use this TCP
+protocol with the plain `CPC` / `C64` / `APPLE2` variants, so they get the same games as the BASIC (HTTP) clients of their platform.
 
 ## Reverse guard
 

@@ -1,9 +1,8 @@
 # Retro Game Battle
 
 Multi-game successor to [Retro Tron Battle](../retro-tron-battle) (built
-for Classic Computing 2026): real retro computers (Atari XL/XE via
-FujiNet, Commodore 64 via FujiNet, Schneider/Amstrad CPC via an M4 board)
-steer via joystick over the network while a Python/pygame
+for Classic Computing 2026): real retro computers (Atari XL/XE, Commodore 64 and Apple II via
+FujiNet, Schneider/Amstrad CPC via an M4 board) steer via joystick over the network while a Python/pygame
 server on a modern PC draws the whole board and runs the game logic.
 
 New here: the **first connecting client picks which game to play** from
@@ -49,10 +48,12 @@ match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 - `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (Atari BASIC)
 - `clients/c64-tcp/` - C64 + FujiNet (C, cc65 + fujinet-lib)
 - `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + the M4 library)
+- `clients/apple2-tcp/` - Apple //e enhanced or later + FujiNet (C, cc65 + fujinet-lib)
 
 The C clients are built with the development kits next to this repository
-(`../development-kit-c64-and-meatloaf`, `../development-kit-cpc-and-m4`), which also run them in
-emulators (VICE + FujiNet-PC, CPCSyntaxError with M4). Ready-made disk images: `disk-images/`.
+(`../development-kit-c64-and-meatloaf`, `../development-kit-cpc-and-m4`,
+`../development-kit-apple2-and-fujinet`), which also run them in emulators (VICE + FujiNet-PC,
+CPCSyntaxError with M4, FujiNet Go Apple II). Ready-made disk images: `disk-images/`.
 
 The HTTP-polling BASIC clients (C64 Meatloaf, C64 WiC64, CPC `|HTTPMEM`) were dropped on
 2026-11-14: they waited up to 0.3-1.3 s per tick for the network while the server runs 250 ms
@@ -72,5 +73,5 @@ Hans has developed the fotofix idea - many thanks from here!
 - Pong and a Gorilla-style artillery game (see `docs/protocol.md`'s
   "Adding a new game" section for why Gorilla in particular needs a
   different input model).
-- The Apple II client (an untested draft in the reference repo) wasn't
-  carried over.
+- The Apple II BASIC draft of the reference repo wasn't carried over - `clients/apple2-tcp/`
+  is a new client in C.

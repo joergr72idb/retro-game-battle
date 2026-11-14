@@ -40,7 +40,7 @@ class PongGame:
     # Same reasoning as Snake: a continuously-updated paddle needs tighter
     # response than Tron's "just don't crash" - WiC64's ~1280ms/poll (see
     # retro-tron-battle/CLAUDE.md) makes real-time paddle control impossible.
-    compatible_variants = {"ATARI", "C64", "CPC"}
+    compatible_variants = {"ATARI", "C64", "CPC", "APPLE2"}
     # A paddle has to go back the way it came: D right after U must not be ignored as a
     # "reverse" the way Tron ignores it (engine/runner.py's _apply_move()).
     reverse_guard = False

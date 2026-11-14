@@ -215,4 +215,4 @@ OPPOSITE = {"U": "D", "D": "U", "L": "R", "R": "L"}
 # Compatibility/variant ids that always exist regardless of which games are
 # registered - not strictly needed by the engine (variants are free-form
 # strings), just documented here for reference:
-#   ATARI, C64, C64-WIC64, CPC
+#   ATARI, C64, C64-WIC64, CPC, APPLE2
