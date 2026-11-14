@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+._*
+
+# Build output
+build/
+*.rel
+*.ihx
+*.lk
+*.noi
+
+# Toolchain (rebuilt by tools/setup.sh)
+src/
+opt/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# emulated M4 SD card
+m4sd/
