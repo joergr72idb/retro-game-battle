@@ -2,7 +2,8 @@
 # (../../../development-kit-cpc-and-m4: SDCC, lib/cpc, lib/m4, tools/cpcbin.py, iDSK).
 #
 #   make                              RGBTCP.BIN for the server 127.0.0.1 (the emulator on this Mac)
-#   make SERVER=192.168.17.138        for a real CPC: the server's LAN address
+#   make SERVER=192.168.17.138        for a real CPC: the server's LAN address (the default;
+#                                     the player can type another one at the start)
 #   make sd                           copy RGBTCP.BIN onto the kit's emulated M4 SD card
 #
 # On the CPC: RUN"RGBTCP"
@@ -19,9 +20,8 @@ SERVER  ?= 127.0.0.1
 PORT    ?= 6502
 NAME    ?= SCHNEIDERCPC
 
-comma   := ,
 CFLAGS  := -mz80 --opt-code-size -I $(DEV)/lib/cpc -I $(DEV)/lib/m4 \
-           -DSERVER_IP='$(subst .,$(comma),$(SERVER))' -DSERVER_PORT=$(PORT) -DPLAYER_NAME='"$(NAME)"'
+           -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT=$(PORT) -DPLAYER_NAME='"$(NAME)"'
 LDFLAGS := -mz80 --no-std-crt0 --code-loc 0x4010 --data-loc 0
 OBJ     := build
 
@@ -29,10 +29,12 @@ OBJ     := build
 
 all: RGBTCP.BIN rgbtcp.dsk
 
-# the server address is compiled in: rebuild when it changes
-$(OBJ)/server.txt: FORCE | $(OBJ)
-	@echo "$(SERVER) $(PORT) $(NAME)" | cmp -s - $@ || echo "$(SERVER) $(PORT) $(NAME)" > $@
-FORCE:
+# the default server is compiled in: when it changes, delete what depends on it. Done while the
+# Makefile is read, before make compares file times (macOS's make 3.81 only to the second).
+SERVER_ID := $(SERVER) $(PORT) $(NAME)
+ifneq ($(shell cat $(OBJ)/server.txt 2>/dev/null),$(SERVER_ID))
+$(shell mkdir -p $(OBJ) && echo "$(SERVER_ID)" > $(OBJ)/server.txt && rm -f $(OBJ)/rgb_tcp.rel RGBTCP.BIN rgbtcp.dsk)
+endif
 
 $(OBJ)/crt0.rel: $(DEV)/lib/cpc/crt0.s | $(OBJ)
 	$(SDASZ80) -o $@ $<

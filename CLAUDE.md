@@ -177,3 +177,15 @@ any client in the future.
   Copyrighted things stay out (Atari ROMs in `rom/`, ProDOS, built `opt/`) via the kits' `.gitignore`.
 - Client Makefiles: `DEV` = `devkits/<kit>` if its `opt/` exists, otherwise `../../../<kit>`.
 - How-to: `docs/howto-devkits.md`; credits for every upstream project: README, "Thanks".
+
+## Server entered at runtime (C clients build 2, 2026-11-14)
+
+- The C clients (C64, CPC, Apple II) ask for the server at the start: RETURN keeps the default
+  from `make SERVER=`/`PORT=`, or type `HOST` or `HOST:PORT`. Asked again after a failed connection,
+  and on **S** at "PRESS A KEY TO PLAY AGAIN". Not stored on disk (a reboot brings the default back).
+- CPC: `SERVER_HOST` is a string now; `a.b.c.d` is parsed in the client, anything else goes through
+  `m4_dns`. C64/Apple II: FujiNet resolves names itself.
+- Tested: CPC (CPCSyntaxError: `localhost:6502`, unknown host -> asks again), C64 (VICE + FujiNet-PC:
+  `127.0.0.1:6502` and `localhost:6502`). Apple II: built, not run in the emulator yet.
+- Testing VICE by hand needs `DYLD_LIBRARY_PATH=opt/vice-bridge` (the kit's `make run` sets it),
+  otherwise VICE has no FujiNet and every connection fails.

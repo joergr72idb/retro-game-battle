@@ -154,7 +154,7 @@ serial bus over TCP 1541 to FujiNet-PC (devices 16 network, 29 clock, 30 FujiNet
 
 ```sh
 cd clients/c64-tcp
-make SERVER=127.0.0.1            # rgbtcp.prg + rgbtcp.d64, server address compiled in
+make SERVER=127.0.0.1            # rgbtcp.prg + rgbtcp.d64, 127.0.0.1 as the default server
 make run                         # FujiNet-PC + VICE, autostarts the client
 ```
 
@@ -200,8 +200,7 @@ cd ../../devkits/development-kit-cpc-and-m4 && make run
 On the CPC: `RUN"RGBTCP"`.
 
 Pitfalls:
-- The server address is compiled in - a build for the LAN server won't reach 127.0.0.1 and
-  vice versa. Rebuild and `make sd` again.
+- After a rebuild, `make sd` again - the emulator runs the copy on its SD card (`m4sd/`).
 - `RUN` of a binary resets the CPC when it ends; to return to BASIC use
   `MEMORY &3FFF:LOAD"NAME":CALL &4000`.
 - The emulated M4 answers ~10x faster than real hardware: check timing on a real CPC + M4.
@@ -249,9 +248,10 @@ Pitfalls:
 
 ## Real hardware
 
-The server address is compiled into the C clients: build with the LAN address of the machine
-running the server, e.g. `make SERVER=192.168.17.138`, and copy the image to the FujiNet's /
-M4's SD card. Ready-made images for the Classic Computing server are in `disk-images/`
+The C clients ask for the server at the start: RETURN keeps the default, or type `HOST` or
+`HOST:PORT` (IP address or host name). After a failed connection they ask again, and **S** after a
+match changes it. `make SERVER=192.168.17.138` sets the default - handy for an event, where
+everyone just presses RETURN. Copy the image to the FujiNet's / M4's SD card. Ready-made images for the Classic Computing server are in `disk-images/`
 (see its README). None of the TCP clients has run on real hardware yet.
 
 ## Thanks

@@ -3,9 +3,9 @@
 One folder per platform: `atari/`, `c64/`, `cpc/` (Schneider/Amstrad).
 The client images are named `rgb.<ext>`.
 
-The C clients have the server address compiled in: these images are built for
-**192.168.17.138:6502** (the Classic Computing server). For another server, build your own
-(`make SERVER=<ip>` in the client's folder).
+The C clients' default server is **192.168.17.138:6502** (the Classic Computing server). At the
+start they show it and ask: RETURN keeps it, or type another `HOST[:PORT]` - so the images work
+with any server. `make SERVER=<ip>` in the client's folder changes only the default.
 
 ## `cpc/rgb.dsk`
 

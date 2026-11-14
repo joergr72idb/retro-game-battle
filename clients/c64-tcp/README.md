@@ -14,14 +14,21 @@ Meatloaf has no FujiNet network device.
 
 ## Build
 
-Needs the C64 development kit next to this repository (`../development-kit-c64-and-fujinet`:
-cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet bridge).
+Needs the C64 development kit (cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet bridge): `devkits/development-kit-c64-and-fujinet` in this repo once its
+`tools/setup.sh` has run, otherwise a checkout of the kit next to this repository. See
+`docs/howto-devkits.md`.
 
 ```sh
 make                            # rgbtcp.prg + rgbtcp.d64 for the server 127.0.0.1 (VICE on this Mac)
-make SERVER=192.168.17.138      # for a real C64: the server's LAN address (compiled in)
+make SERVER=192.168.17.138      # default server for a real C64: the server's LAN address
 make run                        # VICE + the kit's FujiNet-PC with rgbtcp.prg
 ```
+
+At the start the client shows its server and asks: RETURN keeps it, or type `HOST` or `HOST:PORT`
+(an IP address or a host name). After a failed connection it asks again; after a match,
+**S** at "PRESS A KEY TO PLAY AGAIN" changes the server. The address from `make SERVER=` is only the
+default.
+
 
 On the C64: `LOAD"RGBTCP",8` and `RUN`. PIN, game menu (1-4), joystick in **port 2** or the cursor
 keys to steer, fire button or **Space** to fire (Artillery). After the match: any key plays again.

@@ -2,7 +2,8 @@
 # kit (../../../development-kit-apple2-and-fujinet: cc65, fujinet-lib >= 5.1.1, cadius, ProDOS).
 #
 #   make                              RGBTCP.SYSTEM + rgbtcp.po for the server 127.0.0.1 (the emulator)
-#   make SERVER=192.168.17.138        for a real Apple II: the server's LAN address (compiled in)
+#   make SERVER=192.168.17.138        for a real Apple II: the server's LAN address (the default;
+#                                     the player can type another one at the start)
 #
 # rgbtcp.po is a ProDOS boot disk: ProDOS starts RGBTCP.SYSTEM by itself.
 
@@ -26,14 +27,16 @@ NAME    ?= APPLE2
 CFLAGS  := -t apple2enh -O -I $(FNLIB) \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
-.PHONY: all clean FORCE
+.PHONY: all clean
 
 all: rgbtcp.po
 
-# the server address is compiled in: rebuild when it changes
-build/server.txt: FORCE
-	@mkdir -p build
-	@echo "$(SERVER) $(PORT) $(NAME)" | cmp -s - $@ || echo "$(SERVER) $(PORT) $(NAME)" > $@
+# the default server is compiled in: when it changes, delete what depends on it. Done while the
+# Makefile is read, before make compares file times (macOS's make 3.81 only to the second).
+SERVER_ID := $(SERVER) $(PORT) $(NAME)
+ifneq ($(shell cat build/server.txt 2>/dev/null),$(SERVER_ID))
+$(shell mkdir -p build && echo "$(SERVER_ID)" > build/server.txt && rm -f build/RGBTCP.SYSTEM rgbtcp.po)
+endif
 
 build/RGBTCP.SYSTEM: rgb_tcp.c build/server.txt
 	$(CL65) $(CFLAGS) -C apple2enh-system.cfg -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)

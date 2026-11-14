@@ -6,6 +6,7 @@
  * on a C64 with a FujiNet (IEC, network device 16) and never waits for the network to steer.
  *
  * Built with the C64 kit (cc65 + fujinet-lib >= 5.1.1): make SERVER=192.168.17.138, see Makefile.
+ * The server compiled in is only the default: the player can type another one at the start.
  */
 #include <stdio.h>
 #include <string.h>
@@ -23,12 +24,15 @@
 #define PLAYER_NAME "C64FUJINET"
 #endif
 
-#define BUILD       "1"
+#define BUILD       "2"
 
 /* cc65 turns string literals into PETSCII, where upper and lower case are swapped against
    ASCII. Everything that goes over the wire is converted to ASCII first, everything that
    comes back to PETSCII - then the literals below compare and print correctly. */
-static char spec[48];               /* "N:TCP://host:port/" in ASCII */
+static char host[40] = SERVER_HOST;    /* the server, changeable at the start */
+static char port[6] = SERVER_PORT;
+static unsigned char ask = 1;           /* ask for the server before the next connection */
+static char spec[64];               /* "N:TCP://host:port/" in ASCII */
 static char line[200];              /* the last complete line from the server, PETSCII */
 static char inbuf[200];             /* received bytes not yet split into lines, ASCII */
 static unsigned char inlen;
@@ -123,7 +127,7 @@ static unsigned char starts(const char *prefix)
 
 /* ---- screens ----------------------------------------------------------------------- */
 
-static void read_pin(char *pin, unsigned char max)
+static void read_text(char *pin, unsigned char max)
 {
     unsigned char n = 0;
     char k;
@@ -144,6 +148,26 @@ static void read_pin(char *pin, unsigned char max)
     cursor(0);
     pin[n] = 0;
     cputs("\r\n");
+}
+
+/* Shows the server and lets the player keep it (RETURN) or type HOST or HOST:PORT */
+static void ask_server(void)
+{
+    char in[sizeof host + sizeof port];
+    char *p;
+
+    cprintf("SERVER: %s:%s\r\nRETURN = OK, OR TYPE HOST[:PORT]:\r\n? ", host, port);
+    read_text(in, sizeof in);
+    if (!in[0])
+        return;
+    p = strchr(in, ':');
+    if (p) {
+        *p++ = 0;
+        if (*p && strlen(p) < sizeof port)
+            strcpy(port, p);
+    }
+    if (in[0] && strlen(in) < sizeof host)
+        strcpy(host, in);
 }
 
 /* "WAIT GAMES <n> <id>:<label> ..." or "ERR INCOMPATIBLE GAMES <n> ...": show the list,
@@ -239,16 +263,22 @@ static void session(void)
 
     clrscr();
     cputs(" RETRO GAME BATTLE -\r\n CLASSIC COMPUTING 2026\r\n C64 FUJINET - TCP BUILD " BUILD "\r\n\r\n");
+    if (ask) {
+        ask_server();
+        ask = 0;
+    }
     cputs("ENTER YOUR PIN OR PRESS RETURN:\r\n? ");
-    read_pin(pin, sizeof pin);
+    read_text(pin, sizeof pin);
     if (!pin[0])
         strcpy(pin, "NONE");
 
     cputs("CONNECTING...\r\n");
-    to_ascii(spec, "N:TCP://" SERVER_HOST ":" SERVER_PORT "/");
+    sprintf(line, "N:TCP://%s:%s/", host, port);
+    to_ascii(spec, line);
     if (network_open(spec, OPEN_MODE_RW, OPEN_TRANS_NONE) != FN_ERR_OK) {
-        cputs("NO CONNECTION TO " SERVER_HOST ":" SERVER_PORT "\r\n");
+        cprintf("NO CONNECTION TO %s:%s\r\n", host, port);
         network_close(spec);
+        ask = 1;
         return;
     }
     inlen = 0;
@@ -280,9 +310,13 @@ static void session(void)
 
 int main(void)
 {
+    char k;
+
     for (;;) {
         session();
-        cputs("\r\nPRESS A KEY TO PLAY AGAIN.");
-        cgetc();
+        cputs("\r\nPRESS A KEY TO PLAY AGAIN,\r\nS = OTHER SERVER.");
+        k = cgetc();
+        if (k == 's' || k == 'S')
+            ask = 1;
     }
 }

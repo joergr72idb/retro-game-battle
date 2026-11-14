@@ -3,7 +3,8 @@
 # bridge, c1541).
 #
 #   make                              rgbtcp.prg + rgbtcp.d64 for the server 127.0.0.1 (VICE on this Mac)
-#   make SERVER=192.168.17.138        for a real C64: the server's LAN address (compiled in)
+#   make SERVER=192.168.17.138        for a real C64: the server's LAN address (the default;
+#                                     the player can type another one at the start)
 #   make run                          VICE + FujiNet-PC of the kit with rgbtcp.prg
 #
 # On the C64: LOAD"RGBTCP",8 and RUN (or autostart in VICE).
@@ -25,14 +26,16 @@ NAME    ?= C64FUJINET
 CFLAGS  := -t c64 -O -I $(FNLIB) \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
-.PHONY: all run clean FORCE
+.PHONY: all run clean
 
 all: rgbtcp.prg rgbtcp.d64
 
-# the server address is compiled in: rebuild when it changes
-build/server.txt: FORCE
-	@mkdir -p build
-	@echo "$(SERVER) $(PORT) $(NAME)" | cmp -s - $@ || echo "$(SERVER) $(PORT) $(NAME)" > $@
+# the default server is compiled in: when it changes, delete what depends on it. Done while the
+# Makefile is read, before make compares file times (macOS's make 3.81 only to the second).
+SERVER_ID := $(SERVER) $(PORT) $(NAME)
+ifneq ($(shell cat build/server.txt 2>/dev/null),$(SERVER_ID))
+$(shell mkdir -p build && echo "$(SERVER_ID)" > build/server.txt && rm -f rgbtcp.prg rgbtcp.d64)
+endif
 
 rgbtcp.prg: rgb_tcp.c build/server.txt
 	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
