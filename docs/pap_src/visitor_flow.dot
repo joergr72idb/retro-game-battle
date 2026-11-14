@@ -12,9 +12,9 @@ digraph visitor_flow {
 
   start   [label="START\n(retro computer powered on,\nclient program running)", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
   pin     [label="Enter visitor PIN\n(or press ENTER to skip)", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
-  connect [label="Client connects to the server\nover the computer's WiFi add-on\n(FujiNet / Meatloaf / WiC64 / M4)", shape=box, style=filled, fillcolor="#ffffff"];
+  connect [label="Client connects to the server\nover the computer's WiFi add-on\n(FujiNet / M4)", shape=box, style=filled, fillcolor="#ffffff"];
   wait_dec [label="Someone already waiting\nfor a game this computer\ncan play?", shape=diamond, style=filled, fillcolor="#dff2e1"];
-  menu    [label="Show \"PICK A GAME\" menu\n(only games this computer\ncan play, e.g. WiC64:\nTron + Artillery only)", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  menu    [label="Show \"PICK A GAME\" menu\n(only games this computer\ncan play - the server\ndecides per client type)", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
   choose  [label="Type the number\nof the game", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
   show_wait [label="Show\n\"WAITING FOR OPPONENT...\"", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
   opp_dec [label="Opponent\njoined?", shape=diamond, style=filled, fillcolor="#dff2e1"];
@@ -30,7 +30,7 @@ digraph visitor_flow {
   result_dec [label="Exactly one\nwinner?", shape=diamond, style=filled, fillcolor="#dff2e1"];
   show_win [label="Show \"<PLATFORM> WINS!\"\n+ winner's photo + updated\nscore for this game", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
   show_draw [label="Show \"DRAW —\nSIMULTANEOUS CRASH!\"\n+ updated score", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
-  restart [label="Client restarts itself,\nready for the next visitor", shape=box, style=filled, fillcolor="#ffffff"];
+  restart [label="Client is ready for the next\nvisitor (C clients: press a key;\nAtari BASIC: restarts itself)", shape=box, style=filled, fillcolor="#ffffff"];
   end_    [label="END\n(back to START)", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
 
   start -> pin -> connect -> wait_dec;

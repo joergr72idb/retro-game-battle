@@ -1,19 +1,27 @@
 # CLAUDE.md - Retro Game Battle
 
 This project was ported/generalized from
-[`retro-tron-battle`](../retro-tron-battle), which remains the deployed
+[Retro Tron Battle](https://github.com/joergr72idb/retro-tron-battle) (locally `../retro-tron-battle`), which remains the deployed
 build for Classic Computing 2026 and is **not** touched by this project.
 
-**Read [`retro-tron-battle/CLAUDE.md`](../retro-tron-battle/CLAUDE.md)
+**Read [Retro Tron Battle's `CLAUDE.md`](https://github.com/joergr72idb/retro-tron-battle/blob/master/CLAUDE.md)
 first** for every hardware/platform-specific lesson (PETSCII
 case-folding on Meatloaf, reserved BASIC keywords per dialect, C64
 joystick-port ghosting, the `RUN`-not-`GOTO` restart pattern, AMSDOS
 headers on the CPC, FujiNet TCP vs HTTP `AUX2` differences, and so on).
-None of that is repeated here - it all still applies unchanged, since
-the clients in this repo are direct extensions of that project's
-clients, not rewrites.
+None of that is repeated here. It applied 1:1 to the BASIC clients this repo started with; since
+2026-11-14 the clients are the Atari BASIC client plus four C clients (see the sections below),
+and the BASIC-dialect lessons matter mostly for the Atari one.
+
+**Current state in short:** server with four games (Tron, Snake, Pong, Artillery) as plugins;
+clients `clients/atari/` (Atari BASIC) and `clients/{atari,c64,cpc,apple2}-tcp/` (C, raw TCP,
+server entered at runtime); development kits in `devkits/`; how-tos in `docs/`. The sections below
+are a log, oldest first - later sections override earlier ones.
 
 ## Fixes carried over from the reference (2026-09-28)
+
+*(History: the CPC BASIC client these fixes were for was replaced by `clients/cpc-tcp/` on
+2026-11-14. The server fix `drain_moves()` still applies.)*
 
 Ported 1:1 from retro-tron-battle, where the details and the hardware
 verification are documented (its CLAUDE.md, CPC section): CPC screen
@@ -32,13 +40,15 @@ this repo's own CPC client has not run on hardware yet.
   match runner, stats/CSV, render-state plumbing - all ported near-
   verbatim from `tron_server.py`) and `games/` (one file per game,
   implementing `games/base.py`'s `GameModule` interface). See
-  `docs/protocol.md`'s "Adding a new game" section before writing a new
-  one.
+  `docs/howto-new-game.md` before writing a new one.
 - `display/pygame_loop.py` is the same HUD/panels/waiting-screen code as
   the reference, with the one Tron-shaped piece (trail drawing) split
   into a generic `draw_body()` plus a per-game `draw_extra()` hook.
 
 ## One bug found and fixed while porting (not present in the reference)
+
+*(History: the HTTP-polling clients were dropped on 2026-11-14 - the fix is in the git history.
+Any new HTTP client must still parse past the `SESSION` line, see `docs/protocol.md`.)*
 
 The reference's HTTP `/join` response is `"SESSION <id>\n" + <whatever
 was already queued>` - for a SECOND player that gets instantly
@@ -59,6 +69,9 @@ raw response - see the `rs$`/`RS$` construction right after session-id
 extraction in each `.bas` file.
 
 ## Known BASIC-dialect gotcha applied here for the first time in this codebase
+
+*(History: concerned the HTTP-polling clients dropped on 2026-11-14; still valid for any BASIC
+client that builds URLs with `STR$()`.)*
 
 Commodore and Locomotive BASIC's `STR$()` reserves a leading space for
 the sign on non-negative numbers (e.g. C64's `STR$(3)` = `" 3"`, not
@@ -111,7 +124,7 @@ any client in the future.
 - `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).
 - Hans has developed the fotofix idea - many thanks from here!
 
-## CPC over TCP and the Pong reverse fix (2026-11-14, branch cpc-tcp-client)
+## CPC over TCP and the Pong reverse fix (2026-11-14)
 
 - **`clients/cpc-tcp/`** - a C client (SDCC + the M4 library of `../development-kit-cpc-and-m4`)
   that speaks the raw TCP protocol like the Atari, instead of HTTP polling. Reason: on real
@@ -149,7 +162,7 @@ any client in the future.
   server has to be restarted to pick that up.
 - `rgbtcp.po` is not committed: it contains ProDOS 2.4.3, whose GitHub release repo states no licence.
 
-## Testing status
+## Testing status (as of 2026-11-14)
 
 - **Engine (all of `server/engine/` and `server/games/`):** exercised
   end-to-end with `bots/game_bot.sh` against a running `--headless`
@@ -159,14 +172,19 @@ any client in the future.
   unaffected, a later compatible bot still pairs into it), and the
   bounded invalid-selection retry (5 retries then disconnect) all
   verified working as designed.
-- **Clients (`clients/*.bas`):** verified statically only - line-number
-  ascending/no-duplicate check (per the reference project's own
-  convention), Atari line-length limit, and `petcat` tokenization for
-  both C64 clients (all pass). **Not yet run on any emulator or real
-  hardware** - do that next, the same way the reference project does it
-  (see its CLAUDE.md's "Testing without real hardware" section:
-  Fujisan/atari800 for Atari, VICE for C64/Meatloaf+WiC64, CPCEmu
-  (unverified even there) for CPC/M4).
+- **Clients - emulators only, none on real hardware yet:**
+  - Atari BASIC (`clients/atari/`): atari800 + FujiNet-PC, a match won against the C64 (FIRE not
+    checked separately).
+  - Atari C (`clients/atari-tcp/`, build 3): atari800 + FujiNet-PC, played.
+  - C64 C (`clients/c64-tcp/`, build 2): VICE + FujiNet-PC, matches incl. Artillery FIRE; the
+    server prompt with an IP and a host name.
+  - CPC C (`clients/cpc-tcp/`, build 2): CPCSyntaxError, matches; the server prompt incl. an
+    unknown host.
+  - Apple II C (`clients/apple2-tcp/`): FujiNet Go Apple II, a match won with build 1; build 2
+    (server prompt) built but not run in the emulator.
+- **New-game example** (`docs/howto-new-game.md`): logic test + two bots over the network.
+- **Screenshots** of the games: `tools/game_screenshots.py` (real game + display code, scripted
+  players).
 
 ## Development kits in the repo (2026-11-14)
 
@@ -180,7 +198,7 @@ any client in the future.
 
 ## Server entered at runtime (C clients build 2, 2026-11-14)
 
-- The C clients (C64, CPC, Apple II) ask for the server at the start: RETURN keeps the default
+- The C clients (C64, CPC, Apple II; later the Atari C client too) ask for the server at the start: RETURN keeps the default
   from `make SERVER=`/`PORT=`, or type `HOST` or `HOST:PORT`. Asked again after a failed connection,
   and on **S** at "PRESS A KEY TO PLAY AGAIN". Not stored on disk (a reboot brings the default back).
 - CPC: `SERVER_HOST` is a string now; `a.b.c.d` is parsed in the client, anything else goes through
@@ -194,7 +212,7 @@ any client in the future.
 
 - **`clients/atari-tcp/`** - the Atari counterpart of the C clients (cc65 `-t atari` + fujinet-lib,
   the Atari kit), derived from the Apple II client: same protocol code, runtime server prompt, FIRE.
-  Joystick via the OS shadows `STICK0`/`STRIG0`. Talks to the FujiNet over SIO directly - no DOS,
+  Joystick via the hardware (`PORTA`/`TRIG0`, see below). Talks to the FujiNet over SIO directly - no DOS,
   no `N:` handler; the FujiNet boots `rgbtcp.xex` itself (`disk-images/atari/rgbtcp.xex`).
 - The BASIC client `clients/atari/` stays.
 - Played in atari800 + FujiNet-PC (build 3). Two Atari pitfalls found on the way:

@@ -1,11 +1,11 @@
 # Retro Game Battle - wire protocol
 
 This is the maintained protocol reference (the equivalent of
-`retro-tron-battle/server/tron_server.py`'s own top-of-file docstring, kept
+[Retro Tron Battle](https://github.com/joergr72idb/retro-tron-battle)'s `server/tron_server.py` top-of-file docstring, kept
 here as a separate doc instead since this server's protocol code is split
 across several files under `server/engine/`). Update this file whenever the
-protocol changes - it's the source of truth, not the individual `.bas`
-client files.
+protocol changes - it's the source of truth, not the individual client
+sources.
 
 ## Design
 
@@ -15,13 +15,14 @@ play from a server-provided list; the second client is auto-matched into
 it with no menu shown. See `server/games/base.py` for the game-plugin
 interface and `server/engine/pairing.py` for the selection/pairing logic.
 
-## Protocol 1: raw TCP (port 6502: Atari/FujiNet, and the C clients for CPC/M4 and C64/FujiNet)
+## Protocol 1: raw TCP (port 6502 - every client in this repo: Atari, C64, CPC, Apple II)
 
 ```
 Client -> Server:
     HELLO <PLATFORM> <NAME> <VARIANT> [PIN]
     GAME <n>                       game selection (see below)
-    MOVE <U|D|L|R>
+    MOVE <U|D|L|R>                 sent when the stick changes; the server keeps the last direction
+    FIRE                           the button (Artillery fires; the other games ignore it)
     BYE
 
 Server -> Client:
@@ -43,9 +44,9 @@ Server -> Client:
 ```
 
 `VARIANT` is the compatibility id, separate from the display `PLATFORM` -
-e.g. Meatloaf and WiC64 both display as `C64` but have different variants
-(`C64` vs `C64-WIC64`) since they have very different network latency (see
-`retro-tron-battle/CLAUDE.md`'s tick-latency measurements). Send `-` or
+e.g. the former Meatloaf and WiC64 clients both displayed as `C64` but had different variants
+(`C64` vs `C64-WIC64`) since they have very different network latency (see Retro Tron Battle's
+`CLAUDE.md`, tick-latency measurements). Send `-` or
 omit the segment to default `VARIANT` to `PLATFORM`.
 
 ### Game selection
@@ -75,10 +76,10 @@ a full compatibility matrix.
 ### `START`'s shared prefix
 
 `START <game-id> ...` always starts with the game id so a client that
-doesn't care what game it is (all four current clients don't parse
-`START`'s fields at all) needs no changes beyond the selection step
-itself - `START`'s remaining fields are defined per game (Tron and Snake
-currently share the same tail shape: grid dimensions + two spawn points).
+doesn't care what game it is (none of the current clients parses
+`START`'s fields) needs no changes beyond the selection step
+itself - `START`'s remaining fields are defined per game (all four games
+currently share the same tail shape: grid dimensions + two start positions).
 
 ## Protocol 2: HTTP polling (port 8080 - no client in this repo uses it since 2026-11-14)
 
@@ -100,8 +101,10 @@ GET /tick/<session>/<direction-or-GAMEn-or-N>
        nothing.
 ```
 
+`FIRE` works the same way as a direction: `/tick/<session>/FIRE`.
+
 Session/mailbox semantics, grace period after game end, and
-`ERR UNKNOWN SESSION` are unchanged from retro-tron-battle - see
+`ERR UNKNOWN SESSION` are unchanged from Retro Tron Battle - see
 `server/engine/net_http.py`.
 
 ## Compatibility
@@ -110,12 +113,12 @@ Declared as data per game module (`compatible_variants` on each
 `GameModule` in `server/games/`), not hardcoded per-platform checks:
 
 ```
-TRON:  no restriction (None)      - proven fine even at WiC64's ~1280ms/poll
-SNAKE, PONG: {"ATARI", "C64", "CPC", "APPLE2"} - exclude C64-WIC64
+TRON, ARTILLERY: no restriction (None) - proven fine even at WiC64's ~1280ms/poll
+SNAKE, PONG:     {"ATARI", "C64", "CPC", "APPLE2"} - exclude C64-WIC64
 ```
 
-The C clients in `clients/cpc-tcp/`, `clients/c64-tcp/` and `clients/apple2-tcp/` use this TCP
-protocol with the plain `CPC` / `C64` / `APPLE2` variants, so they get the same games as the BASIC (HTTP) clients of their platform.
+All clients in this repo use the plain `ATARI` / `C64` / `CPC` / `APPLE2` variants, so they are
+offered all four games.
 
 ## Reverse guard
 

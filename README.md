@@ -1,6 +1,6 @@
 # Retro Game Battle
 
-Multi-game successor to [Retro Tron Battle](../retro-tron-battle) (built
+Multi-game successor to [Retro Tron Battle](https://github.com/joergr72idb/retro-tron-battle) (built
 for Classic Computing 2026): real retro computers (Atari XL/XE, Commodore 64 and Apple II via
 FujiNet, Schneider/Amstrad CPC via an M4 board) steer via joystick over the network while a Python/pygame
 server on a modern PC draws the whole board and runs the game logic.
@@ -32,18 +32,25 @@ two scripted players instead of real clients (`tools/game_screenshots.py`).
 
 ## Running the server
 
+Needs **Python 3.10 or newer** (on macOS not the system Python 3.9 - e.g. Homebrew's
+`python@3.13`) and pygame:
+
 ```
-cd server
-python3 game_battle_server.py [host] [tcp_port] [http_port]
+python3 -m venv .venv
+.venv/bin/pip install pygame
+.venv/bin/python server/game_battle_server.py [host] [tcp_port] [http_port]
 # defaults: 0.0.0.0 6502 8080
 # add --headless to skip the pygame window (useful for bot-only testing)
 ```
 
-Requires `pip install pygame` unless run with `--headless`.
+Settings (grid, tick rate, colours, photo source, latency equalizer, ...) are in
+`server/config.py`, marked `<-- EDIT`. Results go to `game_results.csv` and the log to
+`game_battle_server.log` in the repo root. The scroll font is not included - see
+`assets/font/README.md`.
 
 ## Testing without hardware
 
-`bots/game_bot.sh [HOST] [PORT] [PLATFORM] [NAME] [VARIANT] [WANT_GAME] [TURN_CHANCE] [PIN]`
+`bots/game_bot.sh [HOST] [PORT] [PLATFORM] [NAME] [VARIANT] [WANT_GAME] [TURN_CHANCE] [PIN] [FIRE_CHANCE]`
 simulates a client over TCP, including the game-selection step - see the
 script's own header comment for examples (including how to exercise the
 compatibility-filtering behavior with a `C64-WIC64` variant).
@@ -80,20 +87,19 @@ Game menu of each client (emulators, server on 127.0.0.1):
 | **Apple II + FujiNet** | |
 | ![Apple II client](docs/screenshots/apple2.png) | |
 
-The C clients are built with the development kits next to this repository
-(`../development-kit-c64-and-fujinet`, `../development-kit-cpc-and-m4`,
-`../development-kit-apple2-and-fujinet`), which also run them in emulators (VICE + FujiNet-PC,
-CPCSyntaxError with M4, FujiNet Go Apple II). Ready-made disk images: `disk-images/`.
-How to build the kits and run each client in its emulator:
-[`docs/howto-devkits.md`](docs/howto-devkits.md).
+The C clients are built with the development kits in `devkits/` (Atari, C64, CPC, Apple II), which
+also run them in emulators (atari800 + FujiNet-PC, VICE + FujiNet-PC, CPCSyntaxError with M4,
+FujiNet Go Apple II). Each client has a step-by-step `BUILD.md`; ready-made images are in
+`disk-images/` (no Apple II image - it would contain ProDOS). How to build the kits and run each
+client in its emulator: [`docs/howto-devkits.md`](docs/howto-devkits.md).
 
 The HTTP-polling BASIC clients (C64 Meatloaf, C64 WiC64, CPC `|HTTPMEM`) were dropped on
 2026-11-14: they waited up to 0.3-1.3 s per tick for the network while the server runs 250 ms
-ticks. They are in the git history (and in retro-tron-battle). The server keeps its HTTP bridge
+ticks. They are in the git history (and in [Retro Tron Battle](https://github.com/joergr72idb/retro-tron-battle)). The server keeps its HTTP bridge
 (port 8080), so such clients still work against it.
 
 The hardware/platform lessons in
-[`retro-tron-battle/CLAUDE.md`](../retro-tron-battle/CLAUDE.md) (PETSCII case-folding, reserved
+[Retro Tron Battle's `CLAUDE.md`](https://github.com/joergr72idb/retro-tron-battle/blob/master/CLAUDE.md) (PETSCII case-folding, reserved
 BASIC keywords, joystick port quirks, `RUN`-not-`GOTO` restarts, and so on) still apply.
 
 ## Thanks

@@ -5,8 +5,8 @@ Retro Game Battle Server
 
 Multi-game successor to retro-tron-battle/server/tron_server.py: same
 retro-computer-steers-over-the-network design, same two participation
-methods (raw TCP for Atari/FujiNet, HTTP polling for C64/Meatloaf,
-C64/WiC64 and CPC/M4), but the first connecting client now picks which
+methods (raw TCP - used by every client in this repo - and HTTP polling,
+kept as a bridge for slow add-ons like the WiC64), but the first connecting client now picks which
 game to play from a server-provided list (see docs/protocol.md), and new
 games can be added as plugins under games/ without touching this file or
 the transport/pairing code under engine/.
@@ -33,7 +33,7 @@ async def server_main(host: str, port: int, http_port: int):
     addrs = ", ".join(str(sock.getsockname()) for sock in tcp_server.sockets)
     http_addrs = ", ".join(str(sock.getsockname()) for sock in http_server.sockets)
     print(f"Retro Game Battle server (build {config.SERVER_BUILD}) listening on {addrs}")
-    print(f"HTTP-polling bridge (C64/Meatloaf, C64/WiC64, CPC/M4) listening on {http_addrs}")
+    print(f"HTTP-polling bridge listening on {http_addrs}")
     print(f"Games available: {', '.join(GAME_ORDER)}")
     print("Waiting for the first challenger to connect and pick a game...")
     async with tcp_server, http_server:

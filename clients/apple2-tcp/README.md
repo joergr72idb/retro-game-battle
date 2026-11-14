@@ -32,4 +32,5 @@ arrow keys to steer, button 0 or **Space** to fire (Artillery). After the match:
 - The boot disk contains ProDOS 2.4.3 (`PRODOS` + boot blocks, from the ProDOS-8 project's GitHub
   releases). That repository states no licence, so `rgbtcp.po` is not committed here - build it.
 - Status: tested in FujiNet Go Apple II (AppleWin core + built-in FujiNet) 2026-11-14: menu, a
-  match, win. **Not yet run on real hardware.**
+  match, win (build 1). Build 2 (server prompt) is built but not yet run in the emulator - the
+  same code works in the C64 and CPC clients. **Not yet run on real hardware.**

@@ -18,7 +18,7 @@ on your machine (the full list with links is in the README, "Thanks"). The upstr
 used unmodified, at the versions pinned in each `tools/setup.sh`.
 
 ```
-retro-game-battle-ng/
+retro-game-battle/
 ├── clients/                 the game clients
 └── devkits/
     ├── development-kit-atari-xl-and-fujinet/

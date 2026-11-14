@@ -12,11 +12,11 @@ digraph technical_flow {
 
   start [label="START\nserver boots,\nlistens on TCP :6502\nand HTTP :8080", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
 
-  method_dec [label="Can the client's network\nadd-on hold a persistent\nTCP socket from BASIC?", shape=diamond, style=filled, fillcolor="#dff2e1"];
+  method_dec [label="Does the client keep\na TCP socket open?", shape=diamond, style=filled, fillcolor="#dff2e1"];
 
-  tcp_hello [label="TCP path (Atari/FujiNet):\nHELLO <PLATFORM> <NAME>\n<VARIANT> [PIN]\non a socket that stays open", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  tcp_hello [label="TCP path (all clients here:\nAtari, C64, CPC, Apple II):\nHELLO <PLATFORM> <NAME>\n<VARIANT> [PIN]\non a socket that stays open", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
 
-  http_join [label="HTTP-poll path (Meatloaf,\nWiC64, M4):\nGET /join/<platform>/<name>/\n<variant>/<pin>\n→ \"SESSION <id>\" + reply", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
+  http_join [label="HTTP-poll bridge (for slow\nadd-ons, e.g. WiC64 -\nno client here uses it):\nGET /join/<platform>/<name>/\n<variant>/<pin>\n→ \"SESSION <id>\" + reply", shape=parallelogram, style=filled, fillcolor="#fdf1cf"];
 
   join [label="join()\nshared by both paths", shape=box, peripheries=2, style=filled, fillcolor="#ffffff"];
 
@@ -60,8 +60,8 @@ digraph technical_flow {
   end_ [label="back to accepting\nnew connections\n(loops to START)", shape=box, style="rounded,filled", fillcolor="#dbe7f7"];
 
   start -> method_dec;
-  method_dec -> tcp_hello [label="yes (Atari)"];
-  method_dec -> http_join [label="no (C64, CPC)"];
+  method_dec -> tcp_hello [label="yes"];
+  method_dec -> http_join [label="no"];
   tcp_hello -> join;
   http_join -> join;
   join -> filter -> match_dec;
