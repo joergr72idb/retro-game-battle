@@ -56,11 +56,13 @@ match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 
 Game menu of each client (emulators, server on 127.0.0.1):
 
-| Atari XL + FujiNet | C64 + FujiNet |
+| Atari XL + FujiNet (C) | Atari XL + FujiNet (BASIC) |
 |---|---|
-| ![Atari client](docs/screenshots/atari.png) | ![C64 client](docs/screenshots/c64.png) |
-| **CPC + M4** | **Apple II + FujiNet** |
-| ![CPC client](docs/screenshots/cpc.png) | ![Apple II client](docs/screenshots/apple2.png) |
+| ![Atari C client](docs/screenshots/atari-c.png) | ![Atari BASIC client](docs/screenshots/atari.png) |
+| **C64 + FujiNet** | **CPC + M4** |
+| ![C64 client](docs/screenshots/c64.png) | ![CPC client](docs/screenshots/cpc.png) |
+| **Apple II + FujiNet** | |
+| ![Apple II client](docs/screenshots/apple2.png) | |
 
 The C clients are built with the development kits next to this repository
 (`../development-kit-c64-and-fujinet`, `../development-kit-cpc-and-m4`,
