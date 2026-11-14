@@ -35,3 +35,24 @@ network calls - on the Apple II it finds the network device on the SmartPort.
   and CPC (8765) kits or the game server (6502, 8080).
 - FujiNet's own `autorun.po` boots without ProDOS: its boot block loads `CONFIG.SYSTEM` by name, so it
   can't be reused for other programs.
+
+## Built on the work of others
+
+This kit is only glue: a setup script that downloads and builds other people's software at fixed
+versions, plus Makefiles and settings that wire it together. Everything that does the real work
+comes from these projects - used unmodified. **A warm thank you to all their maintainers and
+contributors!**
+
+- [cc65](https://github.com/cc65/cc65) - the C compiler and ca65 assembler
+- [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) - the C library for the FujiNet
+- [cadius](https://github.com/mach-kernel/cadius) - ProDOS disk images (originally by Brutal Deluxe)
+- [ProDOS 8](https://github.com/ProDOS-8/ProDOS8-Releases) - ProDOS 2.4.3 for the boot disks (downloaded, never
+  redistributed: the release repository states no licence)
+- [FujiNet Go Apple II](https://github.com/FujiNetWIFI/fujinet-go-apple2-desktop) - the emulator, built on
+  [AppleWin](https://github.com/AppleWin/AppleWin) ([FujiNet's AppleWin fork](https://github.com/FujiNetWIFI/AppleWin))
+  with the [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) built in
+- the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
+
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+[Boost](https://github.com/boostorg/boost), [CMake](https://github.com/Kitware/CMake) and
+[Ninja](https://github.com/ninja-build/ninja).
