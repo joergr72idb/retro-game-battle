@@ -72,3 +72,23 @@ export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 
 The folder layout under `opt/` matches the `atari-dev` folder the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs) expects
 (`make DEV=../development-kit-atari-xl-and-fujinet`).
+
+## Built on the work of others
+
+This kit is only glue: a setup script that downloads and builds other people's software at fixed
+versions, plus Makefiles and settings that wire it together. Everything that does the real work
+comes from these projects - used unmodified. **A warm thank you to all their maintainers and
+contributors!**
+
+- [cc65](https://github.com/cc65/cc65) - the C compiler and ca65 assembler
+- [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) - the C library for the FujiNet
+- [FastBasic](https://github.com/dmsc/fastbasic) by Daniel Serpell - the modern BASIC, cross-compiler and Atari IDE
+- [atari800](https://github.com/atari800/atari800) - the emulator, with NetSIO for FujiNet-PC; it brings
+  [AltirraOS](https://www.virtualdub.org/altirra.html) by Avery Lee, the free OS used when no original ROMs are present
+- [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) - built here as FujiNet-PC, the FujiNet as a Mac program
+- the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
+
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+[Mbed TLS](https://github.com/Mbed-TLS/mbedtls), [CMake](https://github.com/Kitware/CMake),
+[pkgconf](https://github.com/pkgconf/pkgconf), [GNU Autoconf](https://www.gnu.org/software/autoconf/) and
+[Automake](https://www.gnu.org/software/automake/).
