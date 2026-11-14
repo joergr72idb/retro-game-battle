@@ -33,6 +33,7 @@ class Player:
     variant: str = ""       # compatibility id - defaults to platform.upper() if not given
     game_id: str = ""       # filled in once a GAME <n> selection is accepted
     alive: bool = True
+    reverse_guard: bool = True  # set per match from the game (GameModule.reverse_guard)
     fired: bool = False     # set by a "FIRE" command, consumed+reset by a turn-based game's tick()
     input_queue: object = field(default_factory=list)  # raw MOVE letters since the last tick,
     # UNFILTERED by the direction/reversal-guard logic below - for a game like Artillery

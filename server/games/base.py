@@ -13,6 +13,9 @@ class GameModule(Protocol):
                                           # WAIT GAMES / GAME <n> / START <id> / ERR INCOMPATIBLE
     label: str                           # single-token (no spaces) menu label, e.g. "SNAKE-DUEL"
     compatible_variants: set[str] | None  # None = no restriction; else an allowlist of variant ids
+    # optional, default True: a MOVE opposite to the current direction is ignored (Tron can't
+    # turn back into its own trail). Pong sets False - a paddle has to go back and forth.
+    reverse_guard: bool
 
     def init_round(self, p1, p2) -> None:
         """Sets each player's x/y/direction/trail (and any game-level extra

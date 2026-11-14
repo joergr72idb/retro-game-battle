@@ -6,7 +6,7 @@ be a SECOND example (alongside Snake) of a game that genuinely needs
 low latency and is therefore excluded from the slow C64/WiC64 variant,
 same as Snake. First to WIN_SCORE points wins.
 
-Only U/D matter for paddle movement (L/R are simply never applied, since
+Only U/D move a paddle (L/R stop it: tick() never applies them, since
 they're never checked below) - reuses the exact same MOVE wire command
 Tron/Snake already use, no protocol change needed for this game.
 """
@@ -41,6 +41,9 @@ class PongGame:
     # response than Tron's "just don't crash" - WiC64's ~1280ms/poll (see
     # retro-tron-battle/CLAUDE.md) makes real-time paddle control impossible.
     compatible_variants = {"ATARI", "C64", "CPC"}
+    # A paddle has to go back the way it came: D right after U must not be ignored as a
+    # "reverse" the way Tron ignores it (engine/runner.py's _apply_move()).
+    reverse_guard = False
 
     def init_round(self, p1, p2):
         p1.x, p1.y, p1.direction = 1, GRID_H // 2, "R"

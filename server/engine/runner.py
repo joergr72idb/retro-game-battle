@@ -34,7 +34,7 @@ def _apply_move(p, d: str):
     ATARI_LATENCY_EQUALIZER can call it late, once a delayed Atari move
     comes due, instead of right when the MOVE line is read."""
     p.input_queue.append(d)
-    if d == config.OPPOSITE.get(p.direction):
+    if p.reverse_guard and d == config.OPPOSITE.get(p.direction):
         log(f"[move] {p.platform}/{p.name}: {d} ignored (reverse of {p.direction})",
             color=config.MOVE_LOG_COLOR)
     elif d != p.direction:
@@ -184,6 +184,8 @@ def log_ingame_polls(players, since):
 
 async def run_game(p1, p2, game):
     game.init_round(p1, p2)
+    for p in (p1, p2):
+        p.reverse_guard = getattr(game, "reverse_guard", True)
     for p in (p1, p2):
         gaps = _tick_gaps(p)
         if gaps is not None:
