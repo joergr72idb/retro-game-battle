@@ -69,3 +69,27 @@ Without a running emulator, `opt/vice-bridge/netiecctl` talks to FujiNet-PC dire
 - VICE's settings and log stay in `build/` (`-config build/vicerc`, `-logfile`), never in the home folder.
 - **Real hardware:** the Meatloaf board (LOLIN D32 Pro) can also run FujiNet's `fujinet-iec-lolin-d32`
   firmware – same pins (ATN 32, CLK 33, DATA 25, SRQ 26, RESET 34).
+
+## Built on the work of others
+
+This kit is only glue: a setup script that downloads and builds other people's software at fixed
+versions, plus Makefiles and settings that wire it together. Everything that does the real work
+comes from these projects - used unmodified. **A warm thank you to all their maintainers and
+contributors!**
+
+- [cc65](https://github.com/cc65/cc65) - the C compiler and ca65 assembler
+- [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) - the C library for the FujiNet
+- [vice-fn](https://github.com/dillera/vice-fn) by Andy Diller - the FujiNet fork of VICE with the NetIEC
+  bridge that connects the emulated serial bus to FujiNet-PC
+- [VICE](https://vice-emu.sourceforge.io/) ([sources](https://github.com/VICE-Team/svn-mirror)) - the emulator
+  that fork is built on, with `c1541` and `petcat`
+- [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) - built here as FujiNet-PC for the
+  Commodore bus, including the drive code from [Meatloaf](https://github.com/idolpx/meatloaf)
+- the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
+
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL) and
+[SDL_image](https://github.com/libsdl-org/SDL_image), [Mbed TLS](https://github.com/Mbed-TLS/mbedtls),
+[CMake](https://github.com/Kitware/CMake), [pkgconf](https://github.com/pkgconf/pkgconf),
+[xa](https://www.floodgap.com/retrotech/xa/), [GNU Bison](https://www.gnu.org/software/bison/),
+[dos2unix](https://waterlan.home.xs4all.nl/dos2unix.html), [GNU Autoconf](https://www.gnu.org/software/autoconf/)
+and [Automake](https://www.gnu.org/software/automake/).
