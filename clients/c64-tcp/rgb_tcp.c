@@ -186,16 +186,18 @@ static void choose_game(const char *list)
 static void play(void)
 {
     static const char dirs[] = "UDLR";
-    unsigned char dir = 0, now, j, i;
+    unsigned char dir = 0, now, j, i, fire, was_fire = 0;
     char k;
     signed char r;
 
-    cputs("\r\nUSE JOYSTICK (PORT 2)\r\n");
+    cputs("\r\nUSE JOYSTICK (PORT 2), FIRE = BUTTON OR SPACE\r\n");
     for (;;) {
         /* cursor keys queued since the last pass, then the stick in port 2 */
         now = 0;
+        fire = 0;
         while ((k = cbm_k_getin()) != 0) {
-            if (k == CH_CURS_UP) now = 1;
+            if (k == ' ') fire = 1;
+            else if (k == CH_CURS_UP) now = 1;
             else if (k == CH_CURS_DOWN) now = 2;
             else if (k == CH_CURS_LEFT) now = 3;
             else if (k == CH_CURS_RIGHT) now = 4;
@@ -209,6 +211,12 @@ static void play(void)
             sprintf(out, "MOVE %c", dirs[dir - 1]);
             send_line(out);
         }
+        /* FIRE once per press (Artillery; the other games ignore it) */
+        if ((j & 0x10) && !was_fire)
+            fire = 1;
+        was_fire = j & 0x10;
+        if (fire)
+            send_line("FIRE");
 
         r = poll_line();
         if (r < 0) {

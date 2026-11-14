@@ -20,7 +20,8 @@ make SERVER=192.168.17.138      # for a real CPC: the server's LAN address (comp
 make sd                         # copy RGBTCP.BIN onto the kit's emulated M4 SD card
 ```
 
-On the CPC: `RUN"RGBTCP"`. PIN, then the game menu (1-4), joystick or cursor keys to steer.
+On the CPC: `RUN"RGBTCP"`. PIN, then the game menu (1-4), joystick or cursor keys to steer,
+fire button or **Space** to fire (Artillery).
 After the match: any key plays again.
 
 ## Status

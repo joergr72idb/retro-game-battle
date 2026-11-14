@@ -24,7 +24,7 @@ make run                        # VICE + the kit's FujiNet-PC with rgbtcp.prg
 ```
 
 On the C64: `LOAD"RGBTCP",8` and `RUN`. PIN, game menu (1-4), joystick in **port 2** or the cursor
-keys to steer. After the match: any key plays again.
+keys to steer, fire button or **Space** to fire (Artillery). After the match: any key plays again.
 
 ## Notes
 

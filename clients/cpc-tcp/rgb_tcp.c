@@ -185,15 +185,17 @@ static void choose_game(const char *list)
 static void play(void)
 {
     static const char dirs[] = "UDLR";
-    unsigned char dir = 0, now, j, k, i;
+    unsigned char dir = 0, now, j, k, i, fire, was_fire = 0;
     signed char r;
 
-    printf("\nUSE JOYSTICK\n");
+    printf("\nUSE JOYSTICK, FIRE = BUTTON OR SPACE\n");
     for (;;) {
         /* the stick (and cursor keys / joystick codes queued in the key buffer) */
         now = 0;
+        fire = 0;
         while ((k = read_key()) != 0) {
-            if (k == 240 || k == 11) now = 1;
+            if (k == ' ' || k == 224 || k == 225) fire = 1;     /* space, joystick fire codes */
+            else if (k == 240 || k == 11) now = 1;
             else if (k == 241 || k == 10) now = 2;
             else if (k == 242 || k == 8) now = 3;
             else if (k == 243 || k == 9) now = 4;
@@ -207,6 +209,12 @@ static void play(void)
             sprintf(out, "MOVE %c", dirs[dir - 1]);
             send_line(out);
         }
+        /* FIRE once per press (Artillery; the other games ignore it) */
+        if ((j & 0x30) && !was_fire)
+            fire = 1;
+        was_fire = j & 0x30;
+        if (fire)
+            send_line("FIRE");
 
         r = poll_line();
         if (r < 0) {
