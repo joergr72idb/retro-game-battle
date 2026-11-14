@@ -15,7 +15,7 @@ play from a server-provided list; the second client is auto-matched into
 it with no menu shown. See `server/games/base.py` for the game-plugin
 interface and `server/engine/pairing.py` for the selection/pairing logic.
 
-## Protocol 1: raw TCP (port 6502, e.g. Atari/FujiNet)
+## Protocol 1: raw TCP (port 6502, e.g. Atari/FujiNet, CPC/M4 in C)
 
 ```
 Client -> Server:
@@ -113,6 +113,15 @@ Declared as data per game module (`compatible_variants` on each
 TRON:  no restriction (None)      - proven fine even at WiC64's ~1280ms/poll
 SNAKE: {"ATARI", "C64", "CPC"}    - excludes C64-WIC64
 ```
+
+The C client in `clients/cpc-tcp/` uses this TCP protocol with the plain `CPC` variant, so it
+gets the same games as the BASIC (HTTP) CPC client.
+
+## Reverse guard
+
+By default a `MOVE` opposite to the current direction is ignored (Tron can't turn back into its
+own trail). A game module can switch this off with `reverse_guard = False` - Pong does, since a
+paddle has to go up and down. Artillery reads the raw `input_queue` instead.
 
 ## Stats / CSV
 

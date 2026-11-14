@@ -111,6 +111,23 @@ any client in the future.
 - `[move]` log lines colored on the console (`MOVE_LOG_COLOR`).
 - Hans has developed the fotofix idea - many thanks from here!
 
+## CPC over TCP and the Pong reverse fix (2026-11-14, branch cpc-tcp-client)
+
+- **`clients/cpc-tcp/`** - a C client (SDCC + the M4 library of `../development-kit-cpc-and-m4`)
+  that speaks the raw TCP protocol like the Atari, instead of HTTP polling. Reason: on real
+  hardware `|HTTPMEM` blocks ~550 ms per tick against the server's 250 ms ticks. See its README.
+- **Pong bug, all platforms:** `_apply_move()`'s reverse guard (Tron: no turning back) also applied
+  to Pong, so after U a D was ignored (and vice versa) - a paddle could only change direction via
+  L/R, which stops it. Fixed with `GameModule.reverse_guard` (default True; Pong False), copied
+  onto `Player.reverse_guard` in `run_game()`. Tron still ignores reversals (bot match checked).
+  Never noticed before because the bots change direction at random.
+- **Emulator testing for the CPC works now:** CPCSyntaxError with M4 emulation
+  (`../development-kit-cpc-and-m4`) runs the BASIC client (`|HTTPMEM`) unchanged and the TCP
+  client. Caveat: the emulated M4 answers in ~50 ms per HTTP tick, ten times faster than real
+  hardware - timing and the equalizer still need real-hardware checks.
+- The server needs **Python 3.10+** (`float | None` in `engine/model.py`): on macOS use a Homebrew
+  Python, not the system 3.9.
+
 ## Testing status
 
 - **Engine (all of `server/engine/` and `server/games/`):** exercised
