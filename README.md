@@ -10,10 +10,25 @@ a server-provided list; the second client is auto-matched into it. New
 games are added as plugins (`server/games/<name>.py`) without touching
 the shared transport/pairing/rendering code or any existing client.
 
-Games in this pass: **Tron** (ported rule-for-rule from Retro Tron
-Battle) and **Snake** (new - a food-eating duel using the same
-grid/tick model). See `docs/protocol.md` for the full wire protocol and
-`server/games/base.py` for the plugin interface.
+Games: **Lightcycle** (Tron, ported rule-for-rule from Retro Tron Battle), **Snake duel**,
+**Pong** and **Artillery duel** (turn-based: aim with the stick, fire with the button). See
+`docs/protocol.md` for the full wire protocol and `docs/howto-new-game.md` for writing a new game.
+
+## The games
+
+What the server's screen shows during a match - the retro computers only steer:
+
+| Lightcycle (Tron) | Snake duel |
+|---|---|
+| ![Lightcycle](docs/screenshots/games/tron.png) | ![Snake duel](docs/screenshots/games/snake.png) |
+| Steer your lightcycle, its trail stays. Whoever hits a wall or a trail first loses. | Eat the food to grow; hit a wall, yourself or the other snake and you lose. |
+| **Pong** | **Artillery duel** |
+| ![Pong](docs/screenshots/games/pong.png) | ![Artillery duel](docs/screenshots/games/artillery.png) |
+| Up/down moves the paddle. First to 5 points wins. | Turn-based: up/down sets the angle, left/right the power, the button fires. A hit wins. |
+
+The platform logos, names and colours come from the clients that are playing; a photo appears when
+a visitor enters a PIN (fotofix). These pictures were drawn by the real server and game code, with
+two scripted players instead of real clients.
 
 ## Running the server
 
@@ -118,8 +133,5 @@ to all their maintainers and contributors!
 
 ## Not in this pass
 
-- Pong and a Gorilla-style artillery game (see `docs/protocol.md`'s
-  "Adding a new game" section for why Gorilla in particular needs a
-  different input model).
 - The Apple II BASIC draft of the reference repo wasn't carried over - `clients/apple2-tcp/`
   is a new client in C.
