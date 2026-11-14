@@ -45,7 +45,7 @@ NETSIO_PORT ?= 9997
 # FujiNet-PC: NetSIO (UDP) on NETSIO_PORT, web UI http://127.0.0.1:$(WEB_PORT) (local only), SD card = opt/fujinet-pc/SD
 # The [BOIP] port in fnconfig.ini is set from NETSIO_PORT on every start.
 fujinet: | build
-	@sed -i '' '/^\[BOIP\]/,/^\[/ s/^port=.*/port=$(NETSIO_PORT)/' $(FUJINET)/fnconfig.ini
+	@sed -i '' '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETSIO_PORT)/' $(FUJINET)/fnconfig.ini
 	@pgrep -f "$(FUJINET)/fujinet" >/dev/null || \
 	  ( nohup $(DEV)/tools/run-fujinet -u http://127.0.0.1:$(WEB_PORT) >> $(DEV)/build/logs/fujinet.log 2>&1 & sleep 2 )
 
