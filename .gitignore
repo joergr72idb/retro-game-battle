@@ -5,3 +5,6 @@ game_results.csv
 game_battle_server.log
 .DS_Store
 
+
+# fonts are downloaded by each user (licence), see assets/font/README.md
+assets/font/*.ttf

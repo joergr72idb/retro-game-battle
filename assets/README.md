@@ -23,9 +23,6 @@ The club logo is loaded only once at server startup.
 ## assets/font/
 
 The `.ttf` file for the demo scroll text, see `SCROLL_FONT_PATH` in
-`server/tron_server.py`. Leave empty (`SCROLL_FONT_PATH = ""`) to use
-the default font if you don't want a custom one.
-
-**Mind the license:** if the font (e.g. a "Flynn"/TRON fan font) is
-only cleared for personal use, check before any public push whether
-redistributing it via the git repo is actually allowed.
+`server/config.py`. The Flynn font is not included (its licence doesn't
+allow offering it for download) - see `assets/font/README.md` for the
+link. Without it the server uses pygame's default font.
