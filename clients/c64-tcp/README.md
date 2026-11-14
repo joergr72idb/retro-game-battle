@@ -1,6 +1,6 @@
 # C64 client over TCP (FujiNet) - C
 
-A C64 client next to the BASIC ones (`clients/c64/`: Meatloaf and WiC64 over HTTP polling),
+The C64 client (it replaced the BASIC HTTP clients `clients/c64/`, Meatloaf and WiC64, on 2026-11-14),
 speaking the raw TCP protocol the Atari/FujiNet client uses (`docs/protocol.md`, "Protocol 1").
 
 **Why:** the HTTP clients wait for a full request per tick (Meatloaf ~300 ms, WiC64 ~1280 ms) while

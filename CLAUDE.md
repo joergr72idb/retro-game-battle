@@ -131,6 +131,15 @@ any client in the future.
 - The server needs **Python 3.10+** (`float | None` in `engine/model.py`): on macOS use a Homebrew
   Python, not the system 3.9.
 
+## HTTP clients dropped, FIRE everywhere (2026-11-14)
+
+- `clients/c64/` (Meatloaf, WiC64 + driver) and `clients/cpc/` (|HTTPMEM) are gone - replaced by
+  the C TCP clients. They are in the git history. The server's HTTP bridge (port 8080, `net_http.py`)
+  stays, so the protocol and its docs remain valid.
+- No client sent `FIRE` before, so Artillery could only be fired by bots. Now: Atari BASIC
+  (`STRIG`, lines 302-306, before line 370's jump), C64/CPC C clients (button or Space).
+- `disk-images/c64/rgb.d64` and `cpc/rgb.dsk` hold the C clients built for 192.168.17.138.
+
 ## Testing status
 
 - **Engine (all of `server/engine/` and `server/games/`):** exercised

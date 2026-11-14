@@ -3,32 +3,27 @@
 One folder per platform: `atari/`, `c64/`, `cpc/` (Schneider/Amstrad).
 The client images are named `rgb.<ext>`.
 
+The C clients have the server address compiled in: these images are built for
+**192.168.17.138:6502** (the Classic Computing server). For another server, build your own
+(`make SERVER=<ip>` in the client's folder).
+
 ## `cpc/rgb.dsk`
 
-Schneider/Amstrad CPC disk image with the current CPC client
-(`RGB.BAS`, build 5), stored as a headerless ASCII file - load it with
-`RUN"RGB"` (AMSDOS detects ASCII automatically; loading is a bit slower
-than tokenized BASIC). Regenerate after changing the client source:
+Schneider/Amstrad CPC + M4 disk image with the TCP client `RGBTCP.BIN` (C, `clients/cpc-tcp/`).
+Load with `RUN"RGBTCP"` - or copy `RGBTCP.BIN` onto the M4's SD card. Regenerate:
 
 ```
-python3 tools/cpc_dsk_put.py disk-images/cpc/rgb.dsk \
-    clients/cpc/game_battle_cpc_client.bas RGB.BAS
+cd clients/cpc-tcp && make SERVER=192.168.17.138 && cp rgbtcp.dsk ../../disk-images/cpc/rgb.dsk
 ```
 
 ## `c64/rgb.d64`
 
-C64 disk image (for the Meatloaf SD card, or a real 1541 for the WiC64
-variant): `rgb` (Meatloaf client), `rgbwic` (WiC64 client) and
-`fotofix.c000` (the WiC64 driver `rgbwic` loads itself - see
-[`clients/c64/wic64-driver/`](../clients/c64/wic64-driver/)). Load with
-`LOAD"RGB",8` or `LOAD"RGBWIC",8`, then `RUN`. Regenerate (VICE tools):
+C64 + FujiNet disk image with the TCP client `rgbtcp` (C, `clients/c64-tcp/`). Load with
+`LOAD"RGBTCP",8`, then `RUN`. Needs FujiNet firmware (network device 16), not Meatloaf.
+Regenerate:
 
 ```
-petcat -w2 -o rgb.prg -- clients/c64/game_battle_c64_client.bas
-petcat -w2 -o rgbwic.prg -- clients/c64/game_battle_c64_wic64_client.bas
-c1541 -format "retrogamebattle,26" d64 disk-images/c64/rgb.d64 \
-    -write rgb.prg rgb -write rgbwic.prg rgbwic \
-    -write clients/c64/wic64-driver/FOTOFIX.C000 fotofix.c000
+cd clients/c64-tcp && make SERVER=192.168.17.138 && cp rgbtcp.d64 ../../disk-images/c64/rgb.d64
 ```
 
 ## `atari/rgb.atr`

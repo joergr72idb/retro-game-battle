@@ -1,6 +1,6 @@
 # Schneider CPC client over TCP (M4 board) - C
 
-A second CPC client next to the BASIC one (`clients/cpc/`), speaking the raw TCP protocol the
+The CPC client (it replaced the BASIC HTTP client `clients/cpc/` on 2026-11-14), speaking the raw TCP protocol the
 Atari/FujiNet client uses (`docs/protocol.md`, "Protocol 1") instead of HTTP polling.
 
 **Why:** the BASIC client polls the HTTP bridge with `|HTTPMEM`, which blocks the CPC for each

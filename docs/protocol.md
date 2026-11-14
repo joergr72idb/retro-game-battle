@@ -80,7 +80,7 @@ doesn't care what game it is (all four current clients don't parse
 itself - `START`'s remaining fields are defined per game (Tron and Snake
 currently share the same tail shape: grid dimensions + two spawn points).
 
-## Protocol 2: HTTP polling (port 8080, C64/Meatloaf, C64/WiC64, CPC/M4)
+## Protocol 2: HTTP polling (port 8080 - no client in this repo uses it since 2026-11-14)
 
 ```
 GET /join/<platform>/<name>/<variant>/<pin-or-NONE>

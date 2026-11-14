@@ -2,8 +2,8 @@
 
 Multi-game successor to [Retro Tron Battle](../retro-tron-battle) (built
 for Classic Computing 2026): real retro computers (Atari XL/XE via
-FujiNet, Commodore 64 via Meatloaf or WiC64, Schneider/Amstrad CPC via an
-M4 board) steer via joystick over the network while a Python/pygame
+FujiNet, Commodore 64 via FujiNet, Schneider/Amstrad CPC via an M4 board)
+steer via joystick over the network while a Python/pygame
 server on a modern PC draws the whole board and runs the game logic.
 
 New here: the **first connecting client picks which game to play** from
@@ -43,20 +43,25 @@ compatibility-filtering behavior with a `C64-WIC64` variant).
 
 ## Clients
 
-- `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (TCP)
-- `clients/c64/game_battle_c64_client.bas` - C64 + Meatloaf (HTTP polling)
-- `clients/c64/game_battle_c64_wic64_client.bas` - C64 + WiC64 (HTTP polling, experimental)
-- `clients/cpc/game_battle_cpc_client.bas` - Schneider/Amstrad CPC + M4 (HTTP polling)
+All clients speak the raw TCP protocol (`docs/protocol.md`, "Protocol 1"): one connection per
+match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 
-All four were extended from Retro Tron Battle's clients with one new
-step: after connecting, if offered a game list, show it and send a
-choice back before anything else changes. Transferring these to real
-hardware (petcat tokenizing, WinAPE/AMSDOS headers, FujiNet disk images,
-etc.) works exactly as documented in
-[`retro-tron-battle/CLAUDE.md`](../retro-tron-battle/CLAUDE.md) - that
-document's hardware/platform lessons (PETSCII case-folding, reserved
-BASIC keywords, joystick port quirks, `RUN`-not-`GOTO` restarts, and so
-on) all still apply here and aren't repeated in this repo.
+- `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (Atari BASIC)
+- `clients/c64-tcp/` - C64 + FujiNet (C, cc65 + fujinet-lib)
+- `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + the M4 library)
+
+The C clients are built with the development kits next to this repository
+(`../development-kit-c64-and-meatloaf`, `../development-kit-cpc-and-m4`), which also run them in
+emulators (VICE + FujiNet-PC, CPCSyntaxError with M4). Ready-made disk images: `disk-images/`.
+
+The HTTP-polling BASIC clients (C64 Meatloaf, C64 WiC64, CPC `|HTTPMEM`) were dropped on
+2026-11-14: they waited up to 0.3-1.3 s per tick for the network while the server runs 250 ms
+ticks. They are in the git history (and in retro-tron-battle). The server keeps its HTTP bridge
+(port 8080), so such clients still work against it.
+
+The hardware/platform lessons in
+[`retro-tron-battle/CLAUDE.md`](../retro-tron-battle/CLAUDE.md) (PETSCII case-folding, reserved
+BASIC keywords, joystick port quirks, `RUN`-not-`GOTO` restarts, and so on) still apply.
 
 ## Thanks
 
