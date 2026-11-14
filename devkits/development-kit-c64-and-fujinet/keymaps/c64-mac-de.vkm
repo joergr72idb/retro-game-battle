@@ -1,0 +1,10 @@
+# VICE C64 keymap for a German Mac keyboard: VICE's German symbolic map plus a reachable
+# C64 "<-" key (top left on the C64; FujiNet CONFIG uses it as ESC = leave CONFIG and boot).
+#
+# Line format: keysym row column flags   (C64 "<-" is row 7, column 1)
+
+!INCLUDE sdl_sym_de.vkm
+
+167 7 1 8              /*             § -> Left Arrow (same place as on the C64) */
+223 7 1 8              /*             ß -> Left Arrow    */
+96 7 1 8               /*             ` -> Left Arrow    */

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Runs this kit's FujiNet-PC and restarts it whenever it asks for it (exit 75 = the emulated Atari rebooted).
+# Started by its full path so `make stop` can find exactly this instance.
+FN="$(cd "$(dirname "$0")/../opt/fujinet-pc" && pwd)"
+cd "$FN" || exit 1
+"$FN/fujinet" "$@"
+rc=$?
+while [ $rc -eq 75 ]; do
+    echo "Restarting FujiNet"
+    "$FN/fujinet" "$@"
+    rc=$?
+done
+echo "FujiNet ended with exit code $rc"
