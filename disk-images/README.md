@@ -1,9 +1,9 @@
 # Disk images
 
 One folder per platform: `atari/`, `c64/`, `cpc/` (Schneider/Amstrad).
-The client images are named `rgb.<ext>`.
+The client images are named `rgb.<ext>` (Atari C client: `rgbtcp.xex`).
 
-The C clients' default server is **192.168.17.138:6502** (the Classic Computing server). At the
+The C clients' (Atari, C64, CPC, Apple II) default server is **192.168.17.138:6502** (the Classic Computing server). At the
 start they show it and ask: RETURN keeps it, or type another `HOST[:PORT]` - so the images work
 with any server. `make SERVER=<ip>` in the client's folder changes only the default.
 
@@ -24,6 +24,15 @@ Regenerate:
 
 ```
 cd clients/c64-tcp && make SERVER=192.168.17.138 && cp rgbtcp.d64 ../../disk-images/c64/rgb.d64
+```
+
+## `atari/rgbtcp.xex`
+
+The Atari C client (`clients/atari-tcp/`). No disk image needed: copy it to the FujiNet's SD card,
+mount it in CONFIG like a disk and boot - the FujiNet loads XEX files itself. Rebuild:
+
+```
+cd clients/atari-tcp && make SERVER=192.168.17.138 && cp rgbtcp.xex ../../disk-images/atari/rgbtcp.xex
 ```
 
 ## `atari/rgb.atr`

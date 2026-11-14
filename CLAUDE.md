@@ -189,3 +189,14 @@ any client in the future.
   `127.0.0.1:6502` and `localhost:6502`). Apple II: built, not run in the emulator yet.
 - Testing VICE by hand needs `DYLD_LIBRARY_PATH=opt/vice-bridge` (the kit's `make run` sets it),
   otherwise VICE has no FujiNet and every connection fails.
+
+## Atari client in C (2026-11-14)
+
+- **`clients/atari-tcp/`** - the Atari counterpart of the C clients (cc65 `-t atari` + fujinet-lib,
+  the Atari kit), derived from the Apple II client: same protocol code, runtime server prompt, FIRE.
+  Joystick via the OS shadows `STICK0`/`STRIG0`. Talks to the FujiNet over SIO directly - no DOS,
+  no `N:` handler; the FujiNet boots `rgbtcp.xex` itself (`disk-images/atari/rgbtcp.xex`).
+- The BASIC client `clients/atari/` stays.
+- Tested: a test build without prompts connected in atari800 + FujiNet-PC and got the game list
+  (server log). Typing/menu/joystick need a person at the emulator (atari800 can't be typed into
+  from outside).

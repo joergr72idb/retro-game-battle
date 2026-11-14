@@ -6,7 +6,7 @@ with Homebrew, 2026-11-14.
 
 | Kit | Toolchain | Emulator + network | Client |
 |---|---|---|---|
-| `development-kit-atari-xl-and-fujinet` | cc65, fujinet-lib 5.1.0, FastBasic | atari800 7.2.1 (NetSIO) + FujiNet-PC | `clients/atari/` (Atari BASIC) |
+| `development-kit-atari-xl-and-fujinet` | cc65, fujinet-lib 5.1.0, FastBasic | atari800 7.2.1 (NetSIO) + FujiNet-PC | `clients/atari-tcp/` (C), `clients/atari/` (Atari BASIC) |
 | `development-kit-c64-and-fujinet` | cc65, fujinet-lib 5.1.1 | VICE (dillera/vice-fn) + NetIEC bridge + FujiNet-PC (IEC) | `clients/c64-tcp/` |
 | `development-kit-cpc-and-m4` | SDCC, RASM, iDSK, `lib/m4` | CPCSyntaxError 0.16.0 with M4 emulation | `clients/cpc-tcp/` |
 | `development-kit-apple2-and-fujinet` | cc65, fujinet-lib 5.1.1, cadius, ProDOS 2.4.3 | FujiNet Go Apple II 0.10.0 | `clients/apple2-tcp/` |
@@ -106,7 +106,15 @@ What `setup.sh` does, step by step:
 kit's `rom/` - they are copyrighted and not in git; `atari800.cfg` points there. Without them
 atari800 uses its built-in AltirraOS.
 
-**Run the client:**
+**Run the C client:**
+
+```sh
+cd clients/atari-tcp
+make SERVER=127.0.0.1            # rgbtcp.xex, 127.0.0.1 as the default server
+make run                         # FujiNet-PC + atari800 with rgbtcp.xex (joystick = cursor keys + Space)
+```
+
+**Run the BASIC client:**
 
 1. Copy `disk-images/atari/rgb.atr` (from this repo) into `opt/fujinet-pc/SD/` of the kit.
 2. In the kit folder, start FujiNet-PC, then atari800 with BASIC (joystick 0 = cursor keys, fire = Space):

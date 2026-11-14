@@ -49,6 +49,7 @@ All clients speak the raw TCP protocol (`docs/protocol.md`, "Protocol 1"): one c
 match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 
 - `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (Atari BASIC)
+- `clients/atari-tcp/` - Atari XL/XE + FujiNet (C, cc65 + fujinet-lib; boots directly as an XEX)
 - `clients/c64-tcp/` - C64 + FujiNet (C, cc65 + fujinet-lib)
 - `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + the M4 library)
 - `clients/apple2-tcp/` - Apple //e enhanced or later + FujiNet (C, cc65 + fujinet-lib)
