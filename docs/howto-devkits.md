@@ -11,22 +11,27 @@ with Homebrew, 2026-11-14.
 | `development-kit-cpc-and-m4` | SDCC, RASM, iDSK, `lib/m4` | CPCSyntaxError 0.16.0 with M4 emulation | `clients/cpc-tcp/` |
 | `development-kit-apple2-and-fujinet` | cc65, fujinet-lib 5.1.1, cadius, ProDOS 2.4.3 | FujiNet Go Apple II 0.10.0 | `clients/apple2-tcp/` |
 
-Each kit is its own git repository on GitHub (private for now):
-[atari-xl](https://github.com/joergr72idb/development-kit-atari-xl-and-fujinet),
-[c64](https://github.com/joergr72idb/development-kit-c64-and-fujinet),
-[cpc](https://github.com/joergr72idb/development-kit-cpc-and-m4),
-[apple2](https://github.com/joergr72idb/development-kit-apple2-and-fujinet).
-Clone them **next to** this one - the client Makefiles find it
-as `../../../development-kit-...` (override with `make DEV=/path/to/kit`):
+The kits are part of this repo, in `devkits/`. They contain only our own files - build scripts,
+Makefiles, emulator configs, a keymap, the CPC libraries `lib/m4` and `lib/cpc`, samples. No
+upstream sources and nothing copyrighted: every tool is cloned from its own repository and built
+on your machine (the full list with links is in the README, "Thanks"). The upstream projects are
+used unmodified, at the versions pinned in each `tools/setup.sh`.
 
 ```
-<workspace>/
-├── retro-game-battle-ng/            this repo
-├── development-kit-atari-xl-and-fujinet/
-├── development-kit-c64-and-fujinet/
-├── development-kit-cpc-and-m4/
-└── development-kit-apple2-and-fujinet/
+retro-game-battle-ng/
+├── clients/                 the game clients
+└── devkits/
+    ├── development-kit-atari-xl-and-fujinet/
+    ├── development-kit-c64-and-fujinet/
+    ├── development-kit-cpc-and-m4/
+    └── development-kit-apple2-and-fujinet/
 ```
+
+The client Makefiles use `devkits/<kit>` once its `tools/setup.sh` has run (its `opt/` exists),
+otherwise a checkout of the kit next to this repo (`../development-kit-...`); `make DEV=/path/to/kit`
+overrides both. The kits are also kept as separate repositories and merged in with
+`git subtree --squash`; to update one:
+`git subtree pull --prefix=devkits/<kit> <kit repository> main --squash`.
 
 Every kit has the same shape: `tools/setup.sh` clones the upstream sources into `src/` and builds
 everything into `opt/` inside the kit (nothing system-wide except Homebrew packages), build logs go
@@ -35,7 +40,17 @@ targets. Emulator settings are kept in `build/`, never in the home folder. `src/
 `build/` are not in git. The kit's own README has the details; this page is the overview and the
 build steps.
 
+**Not included, because copyrighted - bring your own:**
+- the original Atari OS/BASIC ROMs (into `devkits/development-kit-atari-xl-and-fujinet/rom/`,
+  ignored by git); without them atari800 uses the free AltirraOS
+- ProDOS 2.4.3 states no licence, so it is downloaded by `setup.sh` and never committed - nor is
+  `clients/apple2-tcp/rgbtcp.po`, which contains it
+- the CPC firmware and Duke's M4 ROM come with CPCSyntaxError (Amstrad's firmware is free for
+  emulators, the M4 ROM is included there with Duke's permission) and stay in the kit's `opt/`
+
 ## 0. Prerequisites
+
+Every command block starts in the root folder of this repo.
 
 ```sh
 xcode-select --install                     # compilers, make, git
@@ -47,7 +62,6 @@ gh auth login                              # setup.sh downloads fujinet-lib rele
 For the game server (needs Python 3.10+, the macOS system Python 3.9 is too old):
 
 ```sh
-cd retro-game-battle-ng
 "$(brew --prefix python@3.13)/bin/python3.13" -m venv .venv
 .venv/bin/pip install pygame
 .venv/bin/python server/game_battle_server.py 127.0.0.1 6502 8080 --headless   # or without --headless
@@ -72,7 +86,7 @@ The FujiNet web UIs have no login and listen on 127.0.0.1 only.
 **Build:**
 
 ```sh
-cd development-kit-atari-xl-and-fujinet
+cd devkits/development-kit-atari-xl-and-fujinet
 tools/setup.sh                   # or single parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
 make                             # samples -> build/*.xex
 ```
@@ -95,7 +109,7 @@ atari800 uses its built-in AltirraOS.
 **Run the client:**
 
 1. Copy `disk-images/atari/rgb.atr` (from this repo) into `opt/fujinet-pc/SD/` of the kit.
-2. Start FujiNet-PC, then atari800 with BASIC (joystick 0 = cursor keys, fire = Space):
+2. In the kit folder, start FujiNet-PC, then atari800 with BASIC (joystick 0 = cursor keys, fire = Space):
    ```sh
    make fujinet
    opt/atari800/bin/atari800 -config atari800.cfg -kbdjoy0 -no-kbdjoy1 -xl -basic -netsio 9997
@@ -120,7 +134,7 @@ Pitfalls:
 **Build:**
 
 ```sh
-cd development-kit-c64-and-fujinet
+cd devkits/development-kit-c64-and-fujinet
 tools/setup.sh                   # or single parts: cc65 fujinet-lib fujinet-pc vice
 make
 ```
@@ -139,7 +153,7 @@ serial bus over TCP 1541 to FujiNet-PC (devices 16 network, 29 clock, 30 FujiNet
 **Run the client:**
 
 ```sh
-cd retro-game-battle-ng/clients/c64-tcp
+cd clients/c64-tcp
 make SERVER=127.0.0.1            # rgbtcp.prg + rgbtcp.d64, server address compiled in
 make run                         # FujiNet-PC + VICE, autostarts the client
 ```
@@ -156,7 +170,7 @@ Pitfalls:
 **Build:**
 
 ```sh
-cd development-kit-cpc-and-m4
+cd devkits/development-kit-cpc-and-m4
 tools/setup.sh                   # or single parts: rasm idsk cpcse
 make
 ```
@@ -177,10 +191,10 @@ network.
 **Run the client:**
 
 ```sh
-cd retro-game-battle-ng/clients/cpc-tcp
+cd clients/cpc-tcp
 make SERVER=127.0.0.1            # RGBTCP.BIN + rgbtcp.dsk
 make sd                          # copy RGBTCP.BIN onto the emulated M4 SD card
-cd ../../../development-kit-cpc-and-m4 && make run
+cd ../../devkits/development-kit-cpc-and-m4 && make run
 ```
 
 On the CPC: `RUN"RGBTCP"`.
@@ -199,7 +213,7 @@ Pitfalls:
 **Build:**
 
 ```sh
-cd development-kit-apple2-and-fujinet
+cd devkits/development-kit-apple2-and-fujinet
 tools/setup.sh                   # or single parts: cc65 fujinet-lib cadius prodos fngo
 ```
 
@@ -217,10 +231,10 @@ FujiNet Go is AppleWin with the FujiNet firmware built in - no separate FujiNet-
 **Run the client:**
 
 ```sh
-cd retro-game-battle-ng/clients/apple2-tcp
+cd clients/apple2-tcp
 make SERVER=127.0.0.1            # rgbtcp.po: ProDOS boot disk with RGBTCP.SYSTEM
-cd ../../../development-kit-apple2-and-fujinet
-make run DISK=../retro-game-battle-ng/clients/apple2-tcp/rgbtcp.po
+cd ../../devkits/development-kit-apple2-and-fujinet
+make run DISK=../../clients/apple2-tcp/rgbtcp.po
 ```
 
 In CONFIG: host **SD** -> `rgbtcp.po` -> slot **1** -> **ESC** boots it.
@@ -239,3 +253,10 @@ The server address is compiled into the C clients: build with the LAN address of
 running the server, e.g. `make SERVER=192.168.17.138`, and copy the image to the FujiNet's /
 M4's SD card. Ready-made images for the Classic Computing server are in `disk-images/`
 (see its README). None of the TCP clients has run on real hardware yet.
+
+## Thanks
+
+Every tool in these kits is someone else's open-source work - cc65, fujinet-lib, FujiNet-PC,
+atari800, FastBasic, VICE/vice-fn, SDCC, RASM, iDSK, CPCSyntaxError, Duke's M4 board, cadius,
+ProDOS 8, FujiNet Go Apple II/AppleWin and more. The full list with links is in the README's
+"Thanks" section. A warm thank you to all their maintainers!

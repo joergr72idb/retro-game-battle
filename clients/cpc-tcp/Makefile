@@ -7,7 +7,10 @@
 #
 # On the CPC: RUN"RGBTCP"
 
-DEV     ?= $(abspath ../../../development-kit-cpc-and-m4)
+# the kit: devkits/development-kit-cpc-and-m4 in this repo once its tools/setup.sh has run,
+# otherwise a checkout of the kit next to this repo
+KIT     := development-kit-cpc-and-m4
+DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))
 SDCC    := $(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc
 SDASZ80 := $(dir $(SDCC))sdasz80
 IDSK    := $(DEV)/opt/idsk/iDSK

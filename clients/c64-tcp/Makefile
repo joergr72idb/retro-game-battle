@@ -8,7 +8,10 @@
 #
 # On the C64: LOAD"RGBTCP",8 and RUN (or autostart in VICE).
 
-DEV     ?= $(abspath ../../../development-kit-c64-and-fujinet)
+# the kit: devkits/development-kit-c64-and-fujinet in this repo once its tools/setup.sh has run,
+# otherwise a checkout of the kit next to this repo
+KIT     := development-kit-c64-and-fujinet
+DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))
 CL65    := $(DEV)/opt/cc65/bin/cl65
 FNLIB   := $(DEV)/opt/fujinet-lib
 FNLIBA  := $(wildcard $(FNLIB)/fujinet-c64-*.lib)
