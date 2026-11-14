@@ -52,6 +52,9 @@ build steps.
 
 Every command block starts in the root folder of this repo.
 
+Each C client also has its own step-by-step `BUILD.md` (in `clients/<client>/`), with checks and
+troubleshooting for that platform.
+
 ```sh
 xcode-select --install                     # compilers, make, git
 # Homebrew: https://brew.sh

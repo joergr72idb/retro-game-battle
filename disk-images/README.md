@@ -7,6 +7,10 @@ The C clients' (Atari, C64, CPC, Apple II) default server is **192.168.17.138:65
 start they show it and ask: RETURN keeps it, or type another `HOST[:PORT]` - so the images work
 with any server. `make SERVER=<ip>` in the client's folder changes only the default.
 
+To build an image yourself (other default server, changed code): the step-by-step `BUILD.md` in
+each client's folder - [Atari](../clients/atari-tcp/BUILD.md), [C64](../clients/c64-tcp/BUILD.md),
+[CPC](../clients/cpc-tcp/BUILD.md), [Apple II](../clients/apple2-tcp/BUILD.md).
+
 ## Apple II: build it yourself
 
 There is no Apple II disk here on purpose: the client's boot disk (`rgbtcp.po`) contains ProDOS 2.4.3,

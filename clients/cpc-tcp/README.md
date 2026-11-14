@@ -11,6 +11,9 @@ lines without blocking.
 
 ## Build
 
+Step by step, from an empty Mac to a running client, with checks and troubleshooting:
+**[BUILD.md](BUILD.md)**. In short:
+
 Needs the CPC development kit (SDCC, `lib/cpc`, `lib/m4`, iDSK): `devkits/development-kit-cpc-and-m4` in this repo once its
 `tools/setup.sh` has run, otherwise a checkout of the kit next to this repository. See
 `docs/howto-devkits.md`.
@@ -25,7 +28,6 @@ At the start the client shows its server and asks: RETURN keeps it, or type `HOS
 (an IP address or a host name). After a failed connection it asks again; after a match,
 **S** at "PRESS A KEY TO PLAY AGAIN" changes the server. The address from `make SERVER=` is only the
 default.
-
 
 On the CPC: `RUN"RGBTCP"`. PIN, then the game menu (1-4), joystick or cursor keys to steer,
 fire button or **Space** to fire (Artillery).

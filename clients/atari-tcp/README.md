@@ -7,6 +7,9 @@ directly as `rgbtcp.xex`.
 
 ## Build
 
+Step by step, from an empty Mac to a running client, with checks and troubleshooting:
+**[BUILD.md](BUILD.md)**. In short:
+
 Needs the Atari development kit (cc65, fujinet-lib, atari800 with NetSIO, FujiNet-PC):
 `devkits/development-kit-atari-xl-and-fujinet` in this repo once its `tools/setup.sh` has run,
 otherwise a checkout of the kit next to this repository. See `docs/howto-devkits.md`.
