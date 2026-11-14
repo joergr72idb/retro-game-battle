@@ -50,6 +50,14 @@ match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 - `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + the M4 library)
 - `clients/apple2-tcp/` - Apple //e enhanced or later + FujiNet (C, cc65 + fujinet-lib)
 
+Game menu of each client (emulators, server on 127.0.0.1):
+
+| Atari XL + FujiNet | C64 + FujiNet |
+|---|---|
+| ![Atari client](docs/screenshots/atari.png) | ![C64 client](docs/screenshots/c64.png) |
+| **CPC + M4** | **Apple II + FujiNet** |
+| ![CPC client](docs/screenshots/cpc.png) | ![Apple II client](docs/screenshots/apple2.png) |
+
 The C clients are built with the development kits next to this repository
 (`../development-kit-c64-and-fujinet`, `../development-kit-cpc-and-m4`,
 `../development-kit-apple2-and-fujinet`), which also run them in emulators (VICE + FujiNet-PC,
