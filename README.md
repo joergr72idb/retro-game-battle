@@ -28,7 +28,7 @@ What the server's screen shows during a match - the retro computers only steer:
 
 The platform logos, names and colours come from the clients that are playing; a photo appears when
 a visitor enters a PIN (fotofix). These pictures were drawn by the real server and game code, with
-two scripted players instead of real clients.
+two scripted players instead of real clients (`tools/game_screenshots.py`).
 
 ## Running the server
 

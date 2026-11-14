@@ -8,3 +8,9 @@
   Atari DOS 2.0S `.ATR` image; `.LST`/`.TXT` targets are converted to
   ATASCII for `ENTER`. Zeroes free sectors and rebuilds the VTOC - used
   for `disk-images/atari/rgb.atr`.
+- `game_screenshots.py` - the game screenshots in `docs/screenshots/games/` (README, "The games"):
+  runs the real game modules and the real display with an invisible window (SDL dummy driver) and
+  two scripted players that can see the board, and saves one frame per game. Run from the repo root
+  with the project's Python: `.venv/bin/python tools/game_screenshots.py [OUTDIR]` (default
+  `docs/screenshots/games`). Writes no statistics or log. Rerun it when the display changes; a new
+  game needs its own scripted players in the script.
