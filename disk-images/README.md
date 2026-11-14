@@ -1,11 +1,19 @@
 # Disk images
 
-One folder per platform: `atari/`, `c64/`, `cpc/` (Schneider/Amstrad).
+One folder per platform: `atari/`, `c64/`, `cpc/` (Schneider/Amstrad). No Apple II image - see below.
 The client images are named `rgb.<ext>` (Atari C client: `rgbtcp.xex`).
 
 The C clients' (Atari, C64, CPC, Apple II) default server is **192.168.17.138:6502** (the Classic Computing server). At the
 start they show it and ask: RETURN keeps it, or type another `HOST[:PORT]` - so the images work
 with any server. `make SERVER=<ip>` in the client's folder changes only the default.
+
+## Apple II: build it yourself
+
+There is no Apple II disk here on purpose: the client's boot disk (`rgbtcp.po`) contains ProDOS 2.4.3,
+and its release repository states no licence, so we don't redistribute it. Building it takes one
+kit setup and one `make` - the kit downloads ProDOS for you:
+**[`clients/apple2-tcp/BUILD.md`](../clients/apple2-tcp/BUILD.md)** (step by step, incl. running it
+on a FujiNet and in the emulator).
 
 ## `cpc/rgb.dsk`
 
