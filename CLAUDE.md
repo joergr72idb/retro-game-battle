@@ -197,6 +197,11 @@ any client in the future.
   Joystick via the OS shadows `STICK0`/`STRIG0`. Talks to the FujiNet over SIO directly - no DOS,
   no `N:` handler; the FujiNet boots `rgbtcp.xex` itself (`disk-images/atari/rgbtcp.xex`).
 - The BASIC client `clients/atari/` stays.
-- Tested: a test build without prompts connected in atari800 + FujiNet-PC and got the game list
-  (server log). Typing/menu/joystick need a person at the emulator (atari800 can't be typed into
-  from outside).
+- Played in atari800 + FujiNet-PC (build 3). Two Atari pitfalls found on the way:
+  - **Buzzing:** SIO's "noisy I/O" plays every transfer, and the client polls constantly - `SOUNDR` = 0.
+  - **Joystick dead in the match:** the OS skips its stage-2 VBI (which copies the stick to
+    `STICK0`/`STRIG0`) while SIO is running (`CRITIC`), i.e. nearly always here - read `PORTA` and
+    `TRIG0` directly.
+- `make run` boots the XEX through the FujiNet (`fn_boot.py` mounts it in slot 1, CONFIG off), not
+  `atari800 -run`: with the BASIC client's DOS + `N:` handler disk in D1: the program overwrote the
+  handler and the keyboard was dead. `make config` restores CONFIG.

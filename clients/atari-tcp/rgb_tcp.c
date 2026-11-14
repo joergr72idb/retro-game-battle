@@ -24,7 +24,7 @@
 #define PLAYER_NAME "ATARIXL"
 #endif
 
-#define BUILD       "1"
+#define BUILD       "3"
 
 static char host[40] = SERVER_HOST;    /* the server, changeable at the start */
 static char port[6] = SERVER_PORT;
@@ -203,7 +203,9 @@ static void play(void)
             else if (k == CH_CURS_LEFT) now = 3;
             else if (k == CH_CURS_RIGHT) now = 4;
         }
-        j = ~OS.stick0 & 0x0F;      /* the OS copy of joystick 1: bits 0-3 up/down/left/right, active low */
+        /* the hardware, not the OS copies STICK0/STRIG0: the OS skips updating them while SIO
+           runs (CRITIC), and this loop talks to the FujiNet nearly all the time */
+        j = ~PIA.porta & 0x0F;      /* joystick 1: bits 0-3 up/down/left/right, active low */
         if (j & 1) now = 1;
         else if (j & 2) now = 2;
         else if (j & 4) now = 3;
@@ -214,7 +216,7 @@ static void play(void)
             send_line(out);
         }
         /* FIRE once per press (Artillery; the other games ignore it) */
-        trig = OS.strig0 == 0;      /* 0 = pressed */
+        trig = GTIA_READ.trig0 == 0;    /* 0 = pressed */
         if (trig && !was_fire)
             fire = 1;
         was_fire = trig;
@@ -290,6 +292,7 @@ int main(void)
 {
     char k;
 
+    OS.soundr = 0;                  /* quiet SIO: the client polls the FujiNet all the time */
     clrscr();
     if (network_init() != FN_ERR_OK) {
         cputs("NO FUJINET FOUND.\r\n");

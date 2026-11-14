@@ -111,7 +111,8 @@ atari800 uses its built-in AltirraOS.
 ```sh
 cd clients/atari-tcp
 make SERVER=127.0.0.1            # rgbtcp.xex, 127.0.0.1 as the default server
-make run                         # FujiNet-PC + atari800 with rgbtcp.xex (joystick = cursor keys + Space)
+make run                         # the FujiNet-PC boots rgbtcp.xex in atari800 (joystick = cursor keys + Space)
+make config                      # FujiNet-PC back to its CONFIG menu (e.g. for the BASIC client's disk)
 ```
 
 **Run the BASIC client:**

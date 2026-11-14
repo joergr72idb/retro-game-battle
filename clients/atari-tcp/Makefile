@@ -4,7 +4,8 @@
 #   make                              rgbtcp.xex for the server 127.0.0.1 (the emulator on this Mac)
 #   make SERVER=192.168.17.138        for a real Atari: the server's LAN address (the default;
 #                                     the player can type another one at the start)
-#   make run                          FujiNet-PC + atari800 with rgbtcp.xex (joystick = cursor keys + Space)
+#   make run                          the kit's FujiNet-PC boots rgbtcp.xex, atari800 (joystick = cursor keys + Space)
+#   make config                       the kit's FujiNet-PC back to its CONFIG menu at boot
 #
 # The FujiNet boots rgbtcp.xex directly from its SD card (mount it like a disk image).
 
@@ -15,6 +16,7 @@ DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(K
 CL65    := $(DEV)/opt/cc65/bin/cl65
 FNLIB   := $(DEV)/opt/fujinet-lib
 FNLIBA  := $(wildcard $(FNLIB)/fujinet-atari-*.lib)
+FUJINET := $(DEV)/opt/fujinet-pc
 export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 
 SERVER  ?= 127.0.0.1
@@ -25,7 +27,7 @@ NAME    ?= ATARIXL
 CFLAGS  := -t atari -O -I $(FNLIB) \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
-.PHONY: all run clean
+.PHONY: all run config clean
 
 all: rgbtcp.xex
 
@@ -39,8 +41,20 @@ endif
 rgbtcp.xex: rgb_tcp.c build/server.txt
 	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
 
+# Like a real Atari: the FujiNet boots the XEX itself (no `atari800 -run`: with a disk mounted in
+# D1: the Atari boots that first, and a DOS/N: handler there clashes with the program).
+# FujiNet-PC is restarted first, then atari800 - in that order.
 run: rgbtcp.xex
-	$(MAKE) -C $(DEV) run XEX=$(CURDIR)/rgbtcp.xex JOY=1
+	-pkill -f "$(DEV)/opt/atari800/bin/atari800"
+	$(MAKE) -C $(DEV) stop
+	cp rgbtcp.xex $(FUJINET)/SD/rgbtcp.xex
+	python3 -I fn_boot.py $(FUJINET)/fnconfig.ini /rgbtcp.xex
+	$(MAKE) -C $(DEV) fujinet
+	cd $(DEV) && $(DEV)/opt/atari800/bin/atari800 -config atari800.cfg -kbdjoy0 -no-kbdjoy1 -xl -netsio 9997
+
+config:
+	$(MAKE) -C $(DEV) stop
+	python3 -I fn_boot.py $(FUJINET)/fnconfig.ini --off
 
 clean:
 	rm -rf build rgbtcp.xex
