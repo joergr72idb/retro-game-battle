@@ -116,6 +116,9 @@ any client in the future.
 - **`clients/cpc-tcp/`** - a C client (SDCC + the M4 library of `../development-kit-cpc-and-m4`)
   that speaks the raw TCP protocol like the Atari, instead of HTTP polling. Reason: on real
   hardware `|HTTPMEM` blocks ~550 ms per tick against the server's 250 ms ticks. See its README.
+- **`clients/c64-tcp/`** - the same for the C64 with a FujiNet (cc65 + fujinet-lib, network device
+  16), built with `../development-kit-c64-and-meatloaf`. Converts PETSCII<->ASCII on the wire.
+  Tested in VICE + FujiNet-PC.
 - **Pong bug, all platforms:** `_apply_move()`'s reverse guard (Tron: no turning back) also applied
   to Pong, so after U a D was ignored (and vice versa) - a paddle could only change direction via
   L/R, which stops it. Fixed with `GameModule.reverse_guard` (default True; Pong False), copied

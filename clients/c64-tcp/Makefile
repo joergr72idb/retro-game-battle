@@ -1,0 +1,45 @@
+# C64 client over raw TCP (FujiNet), C with cc65 + fujinet-lib - uses the C64 development kit
+# (../../../development-kit-c64-and-meatloaf: cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet
+# bridge, c1541).
+#
+#   make                              rgbtcp.prg + rgbtcp.d64 for the server 127.0.0.1 (VICE on this Mac)
+#   make SERVER=192.168.17.138        for a real C64: the server's LAN address (compiled in)
+#   make run                          VICE + FujiNet-PC of the kit with rgbtcp.prg
+#
+# On the C64: LOAD"RGBTCP",8 and RUN (or autostart in VICE).
+
+DEV     ?= $(abspath ../../../development-kit-c64-and-meatloaf)
+CL65    := $(DEV)/opt/cc65/bin/cl65
+FNLIB   := $(DEV)/opt/fujinet-lib
+FNLIBA  := $(wildcard $(FNLIB)/fujinet-c64-*.lib)
+C1541   := $(DEV)/opt/vice/bin/c1541
+export CC65_HOME := $(DEV)/opt/cc65/share/cc65
+
+SERVER  ?= 127.0.0.1
+PORT    ?= 6502
+NAME    ?= C64FUJINET
+
+CFLAGS  := -t c64 -O -I $(FNLIB) \
+           -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
+
+.PHONY: all run clean FORCE
+
+all: rgbtcp.prg rgbtcp.d64
+
+# the server address is compiled in: rebuild when it changes
+build/server.txt: FORCE
+	@mkdir -p build
+	@echo "$(SERVER) $(PORT) $(NAME)" | cmp -s - $@ || echo "$(SERVER) $(PORT) $(NAME)" > $@
+
+rgbtcp.prg: rgb_tcp.c build/server.txt
+	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
+
+rgbtcp.d64: rgbtcp.prg
+	rm -f $@
+	$(C1541) -silent -format "rgb tcp,01" d64 $@ -write rgbtcp.prg rgbtcp > /dev/null 2>&1
+
+run: rgbtcp.prg
+	$(MAKE) -C $(DEV) run PRG=$(CURDIR)/rgbtcp.prg
+
+clean:
+	rm -rf build rgbtcp.prg rgbtcp.d64 rgb_tcp.o

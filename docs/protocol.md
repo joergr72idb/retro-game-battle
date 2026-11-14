@@ -15,7 +15,7 @@ play from a server-provided list; the second client is auto-matched into
 it with no menu shown. See `server/games/base.py` for the game-plugin
 interface and `server/engine/pairing.py` for the selection/pairing logic.
 
-## Protocol 1: raw TCP (port 6502, e.g. Atari/FujiNet, CPC/M4 in C)
+## Protocol 1: raw TCP (port 6502: Atari/FujiNet, and the C clients for CPC/M4 and C64/FujiNet)
 
 ```
 Client -> Server:
@@ -114,8 +114,8 @@ TRON:  no restriction (None)      - proven fine even at WiC64's ~1280ms/poll
 SNAKE: {"ATARI", "C64", "CPC"}    - excludes C64-WIC64
 ```
 
-The C client in `clients/cpc-tcp/` uses this TCP protocol with the plain `CPC` variant, so it
-gets the same games as the BASIC (HTTP) CPC client.
+The C clients in `clients/cpc-tcp/` and `clients/c64-tcp/` use this TCP protocol with the plain
+`CPC` / `C64` variants, so they get the same games as the BASIC (HTTP) clients of their platform.
 
 ## Reverse guard
 
