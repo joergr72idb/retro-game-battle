@@ -11,7 +11,12 @@ with Homebrew, 2026-11-14.
 | `development-kit-cpc-and-m4` | SDCC, RASM, iDSK, `lib/m4` | CPCSyntaxError 0.16.0 with M4 emulation | `clients/cpc-tcp/` |
 | `development-kit-apple2-and-fujinet` | cc65, fujinet-lib 5.1.1, cadius, ProDOS 2.4.3 | FujiNet Go Apple II 0.10.0 | `clients/apple2-tcp/` |
 
-Each kit is its own git repository and lives **next to** this one - the client Makefiles find it
+Each kit is its own git repository on GitHub (private for now):
+[atari-xl](https://github.com/joergr72idb/development-kit-atari-xl-and-fujinet),
+[c64](https://github.com/joergr72idb/development-kit-c64-and-fujinet),
+[cpc](https://github.com/joergr72idb/development-kit-cpc-and-m4),
+[apple2](https://github.com/joergr72idb/development-kit-apple2-and-fujinet).
+Clone them **next to** this one - the client Makefiles find it
 as `../../../development-kit-...` (override with `make DEV=/path/to/kit`):
 
 ```
