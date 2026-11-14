@@ -76,3 +76,22 @@ the library takes and returns them in normal order.
 - CPCSyntaxError's licence is MIT; its `roms/` are Amstrad's firmware (free for emulators) and
   Duke's M4 ROM (included with his permission). The other M4 C libraries found
   (M4sockslib, cpc-sdcc) have no licence, so `lib/m4` is written from the documentation instead.
+
+## Built on the work of others
+
+This kit is only glue: a setup script that downloads and builds other people's software at fixed
+versions, plus Makefiles and settings that wire it together. Everything that does the real work
+comes from these projects - used unmodified. **A warm thank you to all their maintainers and
+contributors!**
+
+- [SDCC](https://sdcc.sourceforge.net/) ([sources](https://sourceforge.net/projects/sdcc/)) - the C compiler for the Z80
+- [RASM](https://github.com/EdouardBERGE/rasm) by Edouard Berge - the Z80 assembler
+- [iDSK](https://github.com/cpcsdk/idsk) - CPC disc images
+- [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) - the emulator with M4 board emulation (sockets,
+  `|HTTPGET`/`|HTTPMEM`, SD card); it brings Amstrad's CPC firmware (free for emulators) and Duke's M4 ROM
+- the [M4 board](http://www.spinpoint.org/) by [Duke](https://github.com/M4Duke) - the hardware this kit is
+  about; our `lib/m4` is written from his documented command interface
+  ([m4info.txt](http://www.spinpoint.org/cpc/m4info.txt))
+
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+[CMake](https://github.com/Kitware/CMake) and [Ninja](https://github.com/ninja-build/ninja).
