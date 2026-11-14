@@ -15,14 +15,14 @@ with FujiNet built in. Everything is built into `opt/` inside this folder.
 
 ```sh
 tools/setup.sh                       # Homebrew packages + everything missing into opt/
-make run DISK=../retro-game-battle-ng/clients/apple2-tcp/rgbtcp.po
+make run DISK=path/to/disk.po        # put the disk on the emulated FujiNet's SD card, start the emulator
 ```
 
 In CONFIG: host **SD** → the image → drive slot **1** → **ESC** boots it.
 
 A cc65 program for ProDOS: `cl65 -t apple2enh -C apple2enh-system.cfg` gives a SYS file; on a disk
 with `PRODOS` and the ProDOS boot blocks, the first `*.SYSTEM` file starts by itself (see
-`../retro-game-battle-ng/clients/apple2-tcp/Makefile`). Call `network_init()` before other fujinet-lib
+`clients/apple2-tcp/Makefile` in [Retro Game Battle](https://github.com/joergr72idb/retro-game-battle)). Call `network_init()` before other fujinet-lib
 network calls - on the Apple II it finds the network device on the SmartPort.
 
 ## Notes
