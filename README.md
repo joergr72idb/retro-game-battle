@@ -36,6 +36,8 @@ compatibility-filtering behavior with a `C64-WIC64` variant).
 ## Docs
 
 - `docs/protocol.md` - the wire protocol (source of truth)
+- `docs/howto-devkits.md` - how to build the four development kits (Atari, C64, CPC, Apple II)
+  and run each client in its emulator
 - `docs/pap_diagrams.pdf` - PAP flowcharts for explaining the games to
   visitors (page 1) and the server logic (page 2); regenerate with
   `docs/pap_src/build.sh` from the `.dot` sources there
@@ -62,6 +64,8 @@ The C clients are built with the development kits next to this repository
 (`../development-kit-c64-and-fujinet`, `../development-kit-cpc-and-m4`,
 `../development-kit-apple2-and-fujinet`), which also run them in emulators (VICE + FujiNet-PC,
 CPCSyntaxError with M4, FujiNet Go Apple II). Ready-made disk images: `disk-images/`.
+How to build the kits and run each client in its emulator:
+[`docs/howto-devkits.md`](docs/howto-devkits.md).
 
 The HTTP-polling BASIC clients (C64 Meatloaf, C64 WiC64, CPC `|HTTPMEM`) were dropped on
 2026-11-14: they waited up to 0.3-1.3 s per tick for the network while the server runs 250 ms
