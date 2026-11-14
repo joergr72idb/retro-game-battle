@@ -57,7 +57,8 @@ Without a running emulator, `opt/vice-bridge/netiecctl` talks to FujiNet-PC dire
   (see `ascii2pet()` in `samples/hello.c`).
 - **Meatloaf on FujiNet-PC** has the drive code, but not Meatloaf's HTTP, TNFS and `ML:` file
   systems (they need the ESP32's software). `OPEN 1,8,3,"http://..."` as used by the Meatloaf
-  clients of retro-tron-battle / retro-game-battle(-ng) did **not** work here; network access goes
+  clients of [Retro Tron Battle](https://github.com/joergr72idb/retro-tron-battle) /
+  [Retro Game Battle](https://github.com/joergr72idb/retro-game-battle) did **not** work here; network access goes
   through the FujiNet devices (fujinet-lib) instead.
 - Only the standard IEC protocol: no JiffyDOS or other fast loaders on the FujiNet units.
 - fujinet-lib programs built before 5.1.1 misread every reply from current firmware.
