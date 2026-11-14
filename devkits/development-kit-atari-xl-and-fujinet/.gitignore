@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+._*
+
+# Build output
+build/
+*.o
+*.lst
+*.map
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Toolchain (rebuilt by tools/setup.sh)
+src/
+opt/
+
+# Atari ROMs are copyrighted
+rom/
