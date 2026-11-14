@@ -1,5 +1,5 @@
 # C64 client over raw TCP (FujiNet), C with cc65 + fujinet-lib - uses the C64 development kit
-# (../../../development-kit-c64-and-meatloaf: cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet
+# (../../../development-kit-c64-and-fujinet: cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet
 # bridge, c1541).
 #
 #   make                              rgbtcp.prg + rgbtcp.d64 for the server 127.0.0.1 (VICE on this Mac)
@@ -8,7 +8,7 @@
 #
 # On the C64: LOAD"RGBTCP",8 and RUN (or autostart in VICE).
 
-DEV     ?= $(abspath ../../../development-kit-c64-and-meatloaf)
+DEV     ?= $(abspath ../../../development-kit-c64-and-fujinet)
 CL65    := $(DEV)/opt/cc65/bin/cl65
 FNLIB   := $(DEV)/opt/fujinet-lib
 FNLIBA  := $(wildcard $(FNLIB)/fujinet-c64-*.lib)

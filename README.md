@@ -51,7 +51,7 @@ match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 - `clients/apple2-tcp/` - Apple //e enhanced or later + FujiNet (C, cc65 + fujinet-lib)
 
 The C clients are built with the development kits next to this repository
-(`../development-kit-c64-and-meatloaf`, `../development-kit-cpc-and-m4`,
+(`../development-kit-c64-and-fujinet`, `../development-kit-cpc-and-m4`,
 `../development-kit-apple2-and-fujinet`), which also run them in emulators (VICE + FujiNet-PC,
 CPCSyntaxError with M4, FujiNet Go Apple II). Ready-made disk images: `disk-images/`.
 

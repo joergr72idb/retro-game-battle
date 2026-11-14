@@ -14,7 +14,7 @@ Meatloaf has no FujiNet network device.
 
 ## Build
 
-Needs the C64 development kit next to this repository (`../development-kit-c64-and-meatloaf`:
+Needs the C64 development kit next to this repository (`../development-kit-c64-and-fujinet`:
 cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet bridge).
 
 ```sh
