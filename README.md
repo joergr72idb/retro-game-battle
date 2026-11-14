@@ -142,6 +142,18 @@ to all their maintainers and contributors!
 
 Each kit's README (`devkits/<kit>/README.md`) lists exactly what that kit builds on.
 
+## License
+
+[MIT](LICENSE) - the server, the clients, the tools, the docs and the development kits in
+`devkits/` (each kit also carries its own `LICENSE`). Not covered, because not ours:
+
+- the platform logos in `assets/logos/` - trademarks of their owners, shown only to mark which
+  computer is playing;
+- `disk-images/atari/rgb.atr` - besides our client it contains Atari DOS 2.0S and the FujiNet tools,
+  under their own terms;
+- the projects the kits download and build (see "Thanks") - each under its own licence. Nothing of
+  theirs is in this repo.
+
 ## Not in this pass
 
 - The Apple II BASIC draft of the reference repo wasn't carried over - `clients/apple2-tcp/`
