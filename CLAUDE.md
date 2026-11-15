@@ -2,9 +2,9 @@
 
 Toolchain only - real programs live in their own project folders and point `DEV` here (see README).
 
-- Everything is built by `tools/setup.sh` into `opt/` (sources `src/`, logs `build/logs/`); never install tools
+- Everything is built by `tools/setup-macos.sh` / `tools/setup-linux.sh` (keep their pinned versions in step) into `opt/` (sources `src/`, logs `build/logs/`); never install tools
   system-wide or into the home folder. FujiNet-PC's Python venv is `build/venv-fujinet` (`-V` option of its `build.sh`).
-- FujiNet-PC needs mbedTLS **3** (Homebrew `mbedtls@3`), passed via `MBEDTLS_ROOT_DIR`; 4.x is not what its CI uses.
+- FujiNet-PC needs mbedTLS **3** (macOS: Homebrew `mbedtls@3` via `MBEDTLS_ROOT_DIR`; Linux: the system `libmbedtls-dev` 3.6); 4.x is not what its CI uses.
 - atari800 is built with `--disable-download`: otherwise a missing ROM makes it download PC Xformer ROMs into
   `rom/` next to the config and rewrite `atari800.cfg` - that happened once on 2026-11-14.
 - ROM paths in `atari800.cfg` are relative (`rom/...`): start atari800 from the kit folder (the Makefile does).

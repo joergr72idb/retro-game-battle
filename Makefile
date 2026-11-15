@@ -1,5 +1,6 @@
 # Development kit for Atari XL + FujiNet: cc65 (C + ca65 assembler), FastBasic, fujinet-lib,
-# atari800 with NetSIO and FujiNet-PC. All tools live in opt/ (built by tools/setup.sh).
+# atari800 with NetSIO and FujiNet-PC. All tools live in opt/
+# (built by tools/setup-macos.sh or tools/setup-linux.sh).
 #
 #   make              build the samples into build/
 #   make run          FujiNet-PC + atari800 with build/hello-c.xex (other program: make run XEX=path)
@@ -15,6 +16,8 @@ FNLIB     := $(DEV)/opt/fujinet-lib
 FNLIBA    := $(wildcard $(FNLIB)/fujinet-atari-*.lib)
 ATARI800  := $(DEV)/opt/atari800/bin/atari800
 FUJINET   := $(DEV)/opt/fujinet-pc
+# GNU sed (Linux) and BSD sed (macOS) differ in -i
+SED_I     := $(if $(filter Darwin,$(shell uname -s)),sed -i '',sed -i)
 export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 
 # -t atari, not atarixl: fujinet-lib calls the OS SIO vector, which atarixl switches out
@@ -45,8 +48,8 @@ NETSIO_PORT ?= 9997
 # FujiNet-PC: NetSIO (UDP) on NETSIO_PORT, web UI http://127.0.0.1:$(WEB_PORT) (local only), SD card = opt/fujinet-pc/SD
 # The [BOIP] port in fnconfig.ini is set from NETSIO_PORT on every start.
 fujinet: | build
-	@sed -i '' '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETSIO_PORT)/' $(FUJINET)/fnconfig.ini
-	@pgrep -f "$(FUJINET)/fujinet" >/dev/null || \
+	@$(SED_I) '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETSIO_PORT)/' $(FUJINET)/fnconfig.ini
+	@pgrep -f "$(FUJINET)/[f]ujinet" >/dev/null || \
 	  ( nohup $(DEV)/tools/run-fujinet -u http://127.0.0.1:$(WEB_PORT) >> $(DEV)/build/logs/fujinet.log 2>&1 & sleep 2 )
 
 # Keyboard joystick: off by default (programs that read keys, like the BBS sysop console, need
@@ -58,9 +61,10 @@ run: $(XEX) fujinet
 	$(ATARI800) -config atari800.cfg $(KBDJOY) -xl -netsio $(NETSIO_PORT) -run $(XEX)
 
 # only this kit's instance (matched by its path), never other projects' FujiNet-PC
+# ([f]ujinet: the regex still matches the process, but not the recipe shell, whose command line holds the pattern)
 stop:
-	@pkill -f "$(DEV)/tools/run-fujinet" || true
-	@pkill -f "$(FUJINET)/fujinet" || true
+	@pkill -f "$(DEV)/tools/[r]un-fujinet" || true
+	@pkill -f "$(FUJINET)/[f]ujinet" || true
 
 clean:
 	rm -f build/*.xex build/*.map build/*.lbl build/*.o

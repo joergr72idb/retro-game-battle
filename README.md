@@ -1,16 +1,16 @@
 # Development Kit for Atari XL and FujiNet
 
-A self-contained toolchain on macOS for writing Atari 8-bit XL/XE programs that use the FujiNet,
+A self-contained toolchain for macOS and Linux for writing Atari 8-bit XL/XE programs that use the FujiNet,
 and testing them in an emulator with an emulated FujiNet. Everything is built into `opt/` inside
-this folder; nothing is installed system-wide except a few Homebrew packages.
+this folder; nothing is installed system-wide except a few Homebrew or apt packages.
 
 | Tool | Version | What it is |
 |---|---|---|
 | [cc65](https://github.com/cc65/cc65) | V2.19 (git) | C compiler (`cl65`) and the **ca65** assembler |
 | [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) | 5.1.0 | C library for the FujiNet (network, SD card, clock, …) |
-| [FastBasic](https://github.com/dmsc/fastbasic) | 4.8.1 | Modern structured BASIC, cross-compiled on the Mac to `.xex` |
+| [FastBasic](https://github.com/dmsc/fastbasic) | 4.8.1 | Modern structured BASIC, cross-compiled to `.xex` |
 | [atari800](https://github.com/atari800/atari800) | 7.2.1 | Emulator with NetSIO (needed to talk to FujiNet-PC) |
-| [FujiNet-PC](https://github.com/FujiNetWIFI/fujinet-firmware) | 1.6.1 | The FujiNet firmware as a Mac program |
+| [FujiNet-PC](https://github.com/FujiNetWIFI/fujinet-firmware) | 1.6.1 | The FujiNet firmware as a Mac/Linux program |
 
 ```
 cl65 / fastbasic ──► build/*.xex ──► atari800 -netsio ── UDP 9997 ──► FujiNet-PC
@@ -21,11 +21,15 @@ cl65 / fastbasic ──► build/*.xex ──► atari800 -netsio ── UDP 999
 ## Setup
 
 ```sh
-tools/setup.sh                 # Homebrew packages + builds everything missing into opt/
-tools/setup.sh atari800        # rebuild single parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
+tools/setup-macos.sh           # macOS: Homebrew packages + builds everything missing into opt/
+tools/setup-linux.sh           # Linux (Debian/Ubuntu): checks the apt packages, then the same
+tools/setup-linux.sh atari800  # rebuild single parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
 ```
 
-Versions are pinned at the top of `tools/setup.sh`. Build logs go to `build/logs/`.
+Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
+`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libmbedtls-dev python3-venv gh unzip curl`
+
+Versions are pinned at the top of both setup scripts (keep them in step). Build logs go to `build/logs/`.
 
 ## Use
 
@@ -75,7 +79,7 @@ The folder layout under `opt/` matches the `atari-dev` folder the [Berlin Blues 
 
 ## Built on the work of others
 
-This kit is only glue: a setup script that downloads and builds other people's software at fixed
+This kit is only glue: setup scripts that download and build other people's software at fixed
 versions, plus Makefiles and settings that wire it together. Everything that does the real work
 comes from these projects - used unmodified. **A warm thank you to all their maintainers and
 contributors!**
@@ -85,10 +89,10 @@ contributors!**
 - [FastBasic](https://github.com/dmsc/fastbasic) by Daniel Serpell - the modern BASIC, cross-compiler and Atari IDE
 - [atari800](https://github.com/atari800/atari800) - the emulator, with NetSIO for FujiNet-PC; it brings
   [AltirraOS](https://www.virtualdub.org/altirra.html) by Avery Lee, the free OS used when no original ROMs are present
-- [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) - built here as FujiNet-PC, the FujiNet as a Mac program
+- [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) - built here as FujiNet-PC, the FujiNet as a Mac/Linux program
 - the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
 
-**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew) or Debian/Ubuntu packages, [SDL](https://github.com/libsdl-org/SDL),
 [Mbed TLS](https://github.com/Mbed-TLS/mbedtls), [CMake](https://github.com/Kitware/CMake),
 [pkgconf](https://github.com/pkgconf/pkgconf), [GNU Autoconf](https://www.gnu.org/software/autoconf/) and
 [Automake](https://www.gnu.org/software/automake/).
