@@ -9,6 +9,8 @@
 #   make run          the emulator in a window, M4 on, SD card = m4sd/ (then: RUN"HELLOC")
 #   make shot CMD='RUN"HELLOC"'   headless run, screenshot in build/shot.png (for tests)
 #   make stop         stops the test web server
+#   make fujinet      optional: build/FNHELLO.BIN with fujinet-network-cpc (FujiNet's fujinet-lib
+#                     network API on the M4; fetch it first: tools/setup-linux.sh|setup-macos.sh fujinet)
 
 DEV       := $(CURDIR)
 UNAME     := $(shell uname -s)
@@ -22,6 +24,9 @@ M4SD      := $(DEV)/m4sd
 WWW_PORT  ?= 8765
 FRAMES    ?= 600
 CMD       ?= RUN"HELLOC"
+# fujinet-network-cpc (optional, GPL-3.0-or-later): fetched by the setup script's "fujinet" part,
+# or point it at your own copy
+FNCPC     ?= $(DEV)/src/fujinet-network-cpc
 
 CFLAGS    := -mz80 -I lib/cpc -I lib/m4 --opt-code-size
 # crt0 starts at &4000 (a JP to init), the code right after it
@@ -32,7 +37,7 @@ CPCSE_ENV := CPCSE_HOME=$(DEV)/build/cpcse-home
 
 OBJ       := build/obj
 
-.PHONY: all sd www run shot stop clean
+.PHONY: all sd www run shot stop clean fujinet fncheck
 
 all: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/samples.dsk sd
 
@@ -52,6 +57,27 @@ $(OBJ)/hello.rel: samples/hello.c lib/cpc/cpc.h lib/m4/m4.h | $(OBJ)
 build/HELLOC.BIN: $(OBJ)/crt0.rel $(OBJ)/hello.rel $(OBJ)/cpc.rel $(OBJ)/m4.rel
 	$(SDCC) $(LDFLAGS) -o build/hello.ihx $^
 	python3 -I tools/cpcbin.py build/hello.ihx $@
+
+# optional: the fujinet-network sample, compiled with the library's sources
+FN_CFLAGS := $(CFLAGS) -I $(FNCPC)/include
+
+fncheck:
+	@[ -f $(FNCPC)/src/fujinet-network.c ] || { echo "fujinet-network-cpc not found in $(FNCPC):"; \
+	  echo "  run tools/setup-linux.sh fujinet (or tools/setup-macos.sh fujinet)"; exit 1; }
+
+$(OBJ)/fujinet-network.rel: $(FNCPC)/src/fujinet-network.c $(FNCPC)/include/fujinet-network.h | $(OBJ)
+	$(SDCC) $(FN_CFLAGS) -c -o $@ $<
+
+$(OBJ)/fnhello.rel: samples/fnhello.c $(FNCPC)/include/fujinet-network.h lib/cpc/cpc.h | $(OBJ)
+	$(SDCC) $(FN_CFLAGS) -c -o $@ $<
+
+build/FNHELLO.BIN: $(OBJ)/crt0.rel $(OBJ)/fnhello.rel $(OBJ)/fujinet-network.rel $(OBJ)/m4.rel $(OBJ)/cpc.rel
+	$(SDCC) $(LDFLAGS) -o build/fnhello.ihx $^
+	python3 -I tools/cpcbin.py build/fnhello.ihx $@
+
+fujinet: fncheck build/FNHELLO.BIN
+	mkdir -p $(M4SD)
+	cp build/FNHELLO.BIN $(M4SD)/
 
 build/HELLOA.BIN: samples/hello.asm | $(OBJ)
 	cd build && $(RASM) -o hello ../$< > logs/rasm.log 2>&1 || { cat logs/rasm.log; exit 1; }
