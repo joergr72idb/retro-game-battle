@@ -104,3 +104,8 @@ always first. F10 (on a Mac maybe fn+F10) saves a screenshot as `atari000.pcx` i
   for the server again on the next round.
 - **atari800 without FujiNet:** atari800 must be started after FujiNet-PC and with `-netsio 9997`
   (`make run` does both).
+- **Self test or a black screen:** another FujiNet-PC + atari800 on the same ports (9997/8000, e.g. a
+  Blues BBS instance on the same computer) mixes with the kit's: one FujiNet joins the other's Atari.
+  With the kit's `tools/check-ports`, `make run` stops with the reason instead. Stop the other
+  instance completely (including a restart loop around its FujiNet-PC), or use other ports:
+  `make run NETSIO_PORT=9996 WEB_PORT=8002`.

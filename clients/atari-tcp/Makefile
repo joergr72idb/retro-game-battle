@@ -5,7 +5,11 @@
 #   make SERVER=192.168.17.138        for a real Atari: the server's LAN address (the default;
 #                                     the player can type another one at the start)
 #   make run                          the kit's FujiNet-PC boots rgbtcp.xex, atari800 (joystick = cursor keys + Space)
+#   make run NETSIO_PORT=9996 WEB_PORT=8002   other ports (default 9997/8000, as in the kit)
 #   make config                       the kit's FujiNet-PC back to its CONFIG menu at boot
+#
+# make run stops with the reason when another FujiNet-PC or atari800 uses the ports (the kit's
+# tools/check-ports) - e.g. the Blues BBS's instance on 9997/8000.
 #
 # The FujiNet boots rgbtcp.xex directly from its SD card (mount it like a disk image).
 
@@ -17,6 +21,8 @@ CL65    := $(DEV)/opt/cc65/bin/cl65
 FNLIB   := $(DEV)/opt/fujinet-lib
 FNLIBA  := $(wildcard $(FNLIB)/fujinet-atari-*.lib)
 FUJINET := $(DEV)/opt/fujinet-pc
+NETSIO_PORT ?= 9997
+WEB_PORT    ?= 8000
 export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 
 SERVER  ?= 127.0.0.1
@@ -49,10 +55,11 @@ rgbtcp.xex: $(SRC) platform.h ../common/rgb_platform.h build/server.txt
 run: rgbtcp.xex
 	-pkill -f "$(DEV)/opt/atari800/bin/[a]tari800"
 	$(MAKE) -C $(DEV) stop
+	sleep 1
 	cp rgbtcp.xex $(FUJINET)/SD/rgbtcp.xex
 	python3 -I fn_boot.py $(FUJINET)/fnconfig.ini /rgbtcp.xex
-	$(MAKE) -C $(DEV) fujinet
-	cd $(DEV) && $(DEV)/opt/atari800/bin/atari800 -config atari800.cfg -kbdjoy0 -no-kbdjoy1 -xl -netsio 9997
+	$(MAKE) -C $(DEV) fujinet NETSIO_PORT=$(NETSIO_PORT) WEB_PORT=$(WEB_PORT)
+	cd $(DEV) && $(DEV)/opt/atari800/bin/atari800 -config atari800.cfg -kbdjoy0 -no-kbdjoy1 -xl -netsio $(NETSIO_PORT)
 
 config:
 	$(MAKE) -C $(DEV) stop
