@@ -24,7 +24,9 @@ PORT    ?= 6502
 NAME    ?= ATARIXL
 
 # -t atari, not atarixl: fujinet-lib calls the OS SIO vector, which the atarixl runtime switches out
-CFLAGS  := -t atari -O -I $(FNLIB) \
+SRC     := ../common/rgb_core.c platform.c
+
+CFLAGS  := -t atari -O -I $(FNLIB) -I . -I ../common \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
 .PHONY: all run config clean
@@ -38,8 +40,8 @@ ifneq ($(shell cat build/server.txt 2>/dev/null),$(SERVER_ID))
 $(shell mkdir -p build && echo "$(SERVER_ID)" > build/server.txt && rm -f rgbtcp.xex)
 endif
 
-rgbtcp.xex: rgb_tcp.c build/server.txt
-	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
+rgbtcp.xex: $(SRC) platform.h ../common/rgb_platform.h build/server.txt
+	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ $(SRC) $(FNLIBA)
 
 # Like a real Atari: the FujiNet boots the XEX itself (no `atari800 -run`: with a disk mounted in
 # D1: the Atari boots that first, and a DOS/N: handler there clashes with the program).

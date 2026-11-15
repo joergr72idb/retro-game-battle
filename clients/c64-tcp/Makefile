@@ -23,7 +23,9 @@ SERVER  ?= 127.0.0.1
 PORT    ?= 6502
 NAME    ?= C64FUJINET
 
-CFLAGS  := -t c64 -O -I $(FNLIB) \
+SRC     := ../common/rgb_core.c platform.c
+
+CFLAGS  := -t c64 -O -I $(FNLIB) -I . -I ../common \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
 .PHONY: all run clean
@@ -37,8 +39,8 @@ ifneq ($(shell cat build/server.txt 2>/dev/null),$(SERVER_ID))
 $(shell mkdir -p build && echo "$(SERVER_ID)" > build/server.txt && rm -f rgbtcp.prg rgbtcp.d64)
 endif
 
-rgbtcp.prg: rgb_tcp.c build/server.txt
-	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
+rgbtcp.prg: $(SRC) platform.h ../common/rgb_platform.h build/server.txt
+	$(CL65) $(CFLAGS) -m build/rgbtcp.map -o $@ $(SRC) $(FNLIBA)
 
 rgbtcp.d64: rgbtcp.prg
 	rm -f $@
@@ -48,4 +50,4 @@ run: rgbtcp.prg
 	$(MAKE) -C $(DEV) run PRG=$(CURDIR)/rgbtcp.prg
 
 clean:
-	rm -rf build rgbtcp.prg rgbtcp.d64 rgb_tcp.o
+	rm -rf build rgbtcp.prg rgbtcp.d64

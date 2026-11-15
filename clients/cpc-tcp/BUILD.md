@@ -6,7 +6,9 @@ typed at the start). Build it yourself to change the default server or the code.
 ## What you get
 
 - `RGBTCP.BIN` - the client (SDCC, Z80): a binary with an AMSDOS header, loaded and started at &4000.
-  It talks to the M4 board's TCP sockets through the kit's own C library `lib/m4`.
+  The network calls are the same as in the Atari, C64 and Apple II clients (fujinet-lib's
+  `network_open`, `network_status`, ...): [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc)
+  provides them on the M4, on top of the kit's M4 library `lib/m4`.
 - `rgbtcp.dsk` - a disc image with `RGBTCP.BIN` (made with iDSK)
 
 Runs on a Schneider/Amstrad CPC with an M4 board (tested as a CPC 6128 in the emulator). The server
@@ -45,6 +47,11 @@ keyboard through the CPC firmware), `lib/m4` (the M4 library: sockets, DNS, HTTP
 Duke's documented command interface, [m4info.txt](http://www.spinpoint.org/cpc/m4info.txt)) and
 `tools/cpcbin.py` (`.ihx` -> binary with AMSDOS header).
 
+**fujinet-network-cpc:** a checkout next to this repository
+(`git clone https://github.com/joergr72idb/fujinet-network-cpc` next to `retro-game-battle`), or
+`make FNCPC=/path/to/fujinet-network-cpc`. Nothing to build there - the client's Makefile compiles
+its one source file.
+
 Single parts can be rebuilt: `tools/setup-macos.sh rasm idsk cpcse` (Linux: `tools/setup-linux.sh`, same names).
 
 Check: `brew --prefix sdcc` works, `opt/idsk/iDSK` exists (for building); `opt/cpcse/cpcse` (for
@@ -66,7 +73,9 @@ can still type another server at the start. The Makefile finds the kit in
 What `make` does:
 
 1. `sdasz80` assembles the kit's `lib/cpc/crt0.s`; `sdcc -mz80 --opt-code-size` compiles
-   `rgb_tcp.c`, `lib/cpc/cpc.c` and `lib/m4/m4.c` into `build/*.rel`.
+   `../common/rgb_core.c` (the part shared with the other clients), `platform.c` (screen, keys,
+   joystick), fujinet-network-cpc's `src/fujinet-network.c`, `lib/cpc/cpc.c` and `lib/m4/m4.c` into
+   `build/*.rel`.
 2. `sdcc --no-std-crt0 --code-loc 0x4010 --data-loc 0` links them, crt0 first (its jump at &4000 is
    the entry), into `build/rgb_tcp.ihx`.
 3. `tools/cpcbin.py` turns that into `RGBTCP.BIN` with an AMSDOS header (load and run at &4000).

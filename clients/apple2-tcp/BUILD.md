@@ -41,7 +41,7 @@ tools/setup-macos.sh                   # Linux: tools/setup-linux.sh
 
 | Part | From | Used for |
 |---|---|---|
-| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `rgb_tcp.c` (`cl65`) |
+| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `../common/rgb_core.c` and `platform.c` (`cl65`) |
 | fujinet-lib 5.1.1 | [FujiNetWIFI/fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) release | the FujiNet network calls (`fujinet-apple2-5.1.1.lib`) |
 | cadius 1.4.5 | [mach-kernel/cadius](https://github.com/mach-kernel/cadius) | creating the ProDOS disk image |
 | ProDOS 2.4.3 | [ProDOS-8/ProDOS8-Releases](https://github.com/ProDOS-8/ProDOS8-Releases) | `opt/prodos/PRODOS` + `bootblocks.bin` (blocks 0-1 of the release disk) |
@@ -67,7 +67,7 @@ the start, so one disk works with any server. The Makefile finds the kit in
 
 What `make` does:
 
-1. `cl65 -t apple2enh -O -C apple2enh-system.cfg ... rgb_tcp.c fujinet-apple2-*.lib`
+1. `cl65 -t apple2enh -O -C apple2enh-system.cfg ... ../common/rgb_core.c platform.c fujinet-apple2-*.lib`
    -> `build/RGBTCP.SYSTEM` (a SYS file that ProDOS loads at $2000).
 2. `cadius CREATEVOLUME rgbtcp.po RGB 140KB` - an empty ProDOS volume `/RGB`.
 3. `cadius ADDFILE` for `PRODOS` (type SYS, as `PRODOS#FF0000`) and `RGBTCP.SYSTEM` (type SYS, aux

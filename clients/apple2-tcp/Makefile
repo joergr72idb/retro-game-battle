@@ -24,7 +24,9 @@ PORT    ?= 6502
 NAME    ?= APPLE2
 
 # apple2enh: an Apple //e enhanced or later (lower case, arrow keys); -system: a ProDOS SYS file
-CFLAGS  := -t apple2enh -O -I $(FNLIB) \
+SRC     := ../common/rgb_core.c platform.c
+
+CFLAGS  := -t apple2enh -O -I $(FNLIB) -I . -I ../common \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 
 .PHONY: all clean
@@ -38,8 +40,8 @@ ifneq ($(shell cat build/server.txt 2>/dev/null),$(SERVER_ID))
 $(shell mkdir -p build && echo "$(SERVER_ID)" > build/server.txt && rm -f build/RGBTCP.SYSTEM rgbtcp.po)
 endif
 
-build/RGBTCP.SYSTEM: rgb_tcp.c build/server.txt
-	$(CL65) $(CFLAGS) -C apple2enh-system.cfg -m build/rgbtcp.map -o $@ rgb_tcp.c $(FNLIBA)
+build/RGBTCP.SYSTEM: $(SRC) platform.h ../common/rgb_platform.h build/server.txt
+	$(CL65) $(CFLAGS) -C apple2enh-system.cfg -m build/rgbtcp.map -o $@ $(SRC) $(FNLIBA)
 
 # ProDOS boot disk: PRODOS first, then the first .SYSTEM file is started by itself.
 # cadius takes the file type and load address from the name suffix (#FF2000 = SYS at $2000).

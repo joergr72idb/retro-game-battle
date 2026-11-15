@@ -223,3 +223,17 @@ any client in the future.
 - `make run` boots the XEX through the FujiNet (`fn_boot.py` mounts it in slot 1, CONFIG off), not
   `atari800 -run`: with the BASIC client's DOS + `N:` handler disk in D1: the program overwrote the
   handler and the keyboard was dead. `make config` restores CONFIG.
+
+## Shared client core (2026-11-15, branch shared-client-core)
+
+- The four C clients share `clients/common/rgb_core.c` (protocol, server prompt, menu, MOVE/FIRE,
+  line reading). Each client keeps `platform.c`/`platform.h` (screen, keys, joystick, texts; the C64
+  sets `PLAT_PETSCII`), interface `clients/common/rgb_platform.h`. Builds: Atari 4, C64 3, CPC 3, Apple II 3.
+- The core uses fujinet-lib's network calls everywhere. The CPC gets them from
+  `../fujinet-network-cpc` (own repo, GPL-3, same API on the M4; `make FNCPC=`) instead of calling
+  `lib/m4` directly.
+- Planned with the user: once this works, the repo moves to GPL-3 (the Atari/C64/Apple II binaries
+  link fujinet-lib, which is GPL-3), with the reason in the README.
+- Tested: CPC in the headless emulator against the server (port 6602) and a bot (Tron, Artillery),
+  and against a fake server that logs the CPC's lines (HELLO, GAME, MOVE U/L, FIRE x3, BYE).
+  Atari, C64, Apple II: built only - their emulators need a window and keys typed by hand.

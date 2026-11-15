@@ -37,7 +37,7 @@ into the kit's `opt/` (sources in `src/`, logs in `build/logs/`):
 
 | Part | From | Used for |
 |---|---|---|
-| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `rgb_tcp.c` (`cl65`) |
+| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `../common/rgb_core.c` and `platform.c` (`cl65`) |
 | fujinet-lib 5.1.0 | [FujiNetWIFI/fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) release | the FujiNet network calls (`fujinet-atari-5.1.0.lib`) |
 | atari800 7.2.1 | [atari800/atari800](https://github.com/atari800/atari800) | the emulator, with NetSIO (only for testing; Homebrew's atari800 has no NetSIO) |
 | FujiNet-PC 1.6.1 | [FujiNetWIFI/fujinet-firmware](https://github.com/FujiNetWIFI/fujinet-firmware) | the FujiNet as a Mac program (only for testing) |
@@ -64,7 +64,7 @@ name sent to the server) are compiled in as defaults. The player can still type 
 the start. The Makefile finds the kit in `../../devkits/development-kit-atari-xl-and-fujinet` (or
 `../../../development-kit-atari-xl-and-fujinet`); `make DEV=/path/to/kit` points it elsewhere.
 
-What `make` does: `cl65 -t atari -O ... rgb_tcp.c fujinet-atari-*.lib` -> `rgbtcp.xex` (and a
+What `make` does: `cl65 -t atari -O ... ../common/rgb_core.c platform.c fujinet-atari-*.lib` -> `rgbtcp.xex` (and a
 linker map in `build/`). When `SERVER`/`PORT`/`NAME` change, the Makefile deletes the old binary
 first, so a rebuild always has the new default.
 

@@ -39,7 +39,7 @@ with Homebrew and builds into the kit's `opt/` (sources in `src/`, logs in `buil
 
 | Part | From | Used for |
 |---|---|---|
-| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `rgb_tcp.c` (`cl65`) |
+| cc65 | [cc65/cc65](https://github.com/cc65/cc65) (master) | compiling `../common/rgb_core.c` and `platform.c` (`cl65`) |
 | fujinet-lib 5.1.1 | [FujiNetWIFI/fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) release | the FujiNet network calls (`fujinet-c64-5.1.1.lib`) - 5.1.1 or newer: older releases misread every reply from current firmware |
 | VICE (FujiNet fork) | [dillera/vice-fn](https://github.com/dillera/vice-fn), commit `7f4e552` | `c1541` for the disk image; the emulator and its NetIEC bridge (`libopencbm.dylib`) for testing |
 | FujiNet-PC (IEC) | [FujiNetWIFI/fujinet-firmware](https://github.com/FujiNetWIFI/fujinet-firmware), commit `8cc29e8b5` | the FujiNet as a Mac program on the emulated serial bus (only for testing; NetIEC is on master only) |
@@ -64,7 +64,7 @@ the start. The Makefile finds the kit in `../../devkits/development-kit-c64-and-
 
 What `make` does:
 
-1. `cl65 -t c64 -O ... rgb_tcp.c fujinet-c64-*.lib` -> `rgbtcp.prg` (and a linker map in `build/`).
+1. `cl65 -t c64 -O ... ../common/rgb_core.c platform.c fujinet-c64-*.lib` -> `rgbtcp.prg` (and a linker map in `build/`).
 2. `c1541 -format "rgb tcp,01" d64 rgbtcp.d64 -write rgbtcp.prg rgbtcp` -> `rgbtcp.d64`.
 
 When `SERVER`/`PORT`/`NAME` change, the Makefile deletes the old program and disk first, so a

@@ -17,6 +17,9 @@ Step by step, from an empty Mac to a running client, with checks and troubleshoo
 Needs the CPC development kit (SDCC, `lib/cpc`, `lib/m4`, iDSK): `devkits/development-kit-cpc-and-m4` in this repo once its
 setup script (`tools/setup-macos.sh` / `tools/setup-linux.sh`) has run, otherwise a checkout of the kit next to this repository. See
 `docs/howto-devkits.md`.
+And [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) next to this repository
+(`make FNCPC=/path` for another place): it gives the CPC the same network calls as fujinet-lib on the
+FujiNet machines, so the client shares its protocol code (`../common/rgb_core.c`) with them.
 
 ```sh
 make                            # RGBTCP.BIN + rgbtcp.dsk for the server 127.0.0.1 (the emulator)
