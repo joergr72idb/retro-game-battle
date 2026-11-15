@@ -11,5 +11,11 @@ Toolchain only - real programs live in their own project folders and point `DEV`
 - cadius: `EXTRACTFILE` mirrors absolute output paths under the current folder and appends
   `#type+aux` to names; extracted files get a 1924 date (touch them). `ADDFILE` takes type/aux from a
   `#FF2000` name suffix. Boot blocks are not written by `CREATEVOLUME` - dd them into block 0-1.
-- The emulator can't be driven from outside: the user boots disks in CONFIG. Check network code via
-  the game server's log or `build/xdg-data/fujinet-go-apple2/fujinet/fujinet-console.log`.
+- `make run` (the GNOME app) can't be driven from outside. For checks use `make shot DISK= KEYS= FRAMES=`
+  (tools/a2shot.c on FujiNet Go's libapple2session.a from build/fngo): headless, boots the disk without CONFIG
+  ([Mount1] + configenabled=0 written into build/shot-data/fujinet/fnconfig.ini), then read build/shot.txt /
+  build/shot.png / build/shot.fujinet.log. Tested 2026-11-15 with a key-echo disk: text, CTRL, joystick, buttons.
+- a2shot details: the session library chdir()s - pass absolute paths. Its emulator starts with Caps Lock on
+  (unshifted letters come out upper case, Shift gives lower case): `type` sends lower case with Shift. The text dump
+  shows MouseText line characters as letters (e.g. "S"). Ports 1985/64001 are fixed (refuses while make run is open).
+  60 frames = 1 s; ProDOS + a SYS file from the SD card are up after ~400 frames.
