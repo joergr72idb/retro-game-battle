@@ -2,13 +2,15 @@
 
 Toolchain only - real programs live in their own project folders and point `DEV` here.
 
-- Everything is built by `tools/setup.sh` into `opt/` (sources `src/`, logs `build/logs/`). SDCC is the
-  Homebrew one. CPCSyntaxError is pinned (`CPCSE_TAG`): it changes almost daily - update on purpose and retest.
+- Everything is built by `tools/setup-macos.sh` / `tools/setup-linux.sh` (keep their pinned versions in step) into
+  `opt/` (sources `src/`, logs `build/logs/`). SDCC is the Homebrew one (macOS) or the apt one (Linux).
+  CPCSyntaxError is pinned (`CPCSE_TAG`): it changes almost daily - update on purpose and retest.
 - The emulator stores its settings next to the program unless `CPCSE_HOME` is set: always run it with
   `CPCSE_HOME=build/cpcse-home` (the Makefile does).
 - Headless `--shot` ignores `--roms` and looks for `roms/` in the current folder: run it from `opt/cpcse`
-  with absolute paths (`make shot`). Check results by reading `build/shot.png`. Typing (`--type`) needs
-  ~600 frames before the result is on screen; fewer and the text never appears.
+  with absolute paths (`make shot`). Check results by reading `build/shot.png` (macOS converts with `sips`,
+  Linux with `tools/bmp2png.py`). Typing (`--type`) needs ~600 frames before the result is on screen;
+  fewer and the text never appears.
 - Don't put `\` before `&` in `CMD` - it reaches the CPC literally.
 - `RUN"X"` of a binary resets the firmware, and the CPC restarts when the program returns: samples wait
   for a key. `LOAD` of a binary into &4000 needs `MEMORY &3FFF` first (else "Memory full").

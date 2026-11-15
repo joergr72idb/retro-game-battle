@@ -1,6 +1,7 @@
 # Development kit for the Amstrad/Schneider CPC + M4 board: SDCC (C), RASM (assembler), iDSK (disc
 # images), CPCSyntaxError (emulator with M4 incl. WiFi through the Mac's network) and lib/m4 (our
-# own M4 library: HTTP into memory, TCP sockets, DNS). Tools in opt/ (built by tools/setup.sh).
+# own M4 library: HTTP into memory, TCP sockets, DNS). Tools in opt/
+# (built by tools/setup-macos.sh or tools/setup-linux.sh).
 #
 #   make              build the samples: build/HELLOC.BIN, HELLOA.BIN, HELLO.BAS + build/samples.dsk,
 #                     and copy them onto the emulated M4's SD card (m4sd/)
@@ -10,7 +11,9 @@
 #   make stop         stops the test web server
 
 DEV       := $(CURDIR)
-SDCC      := $(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc
+UNAME     := $(shell uname -s)
+# SDCC: Homebrew's on macOS, the one on PATH (apt) on Linux
+SDCC      := $(if $(filter Darwin,$(UNAME)),$(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc,$(shell command -v sdcc 2>/dev/null))
 SDASZ80   := $(dir $(SDCC))sdasz80
 RASM      := $(DEV)/opt/rasm/rasm
 IDSK      := $(DEV)/opt/idsk/iDSK
@@ -72,8 +75,11 @@ sd: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS
 	cp $^ $(M4SD)/
 
 # local web server for the samples, only on 127.0.0.1
+# WWW_PROC: anchored at the first word (python3, or Homebrew's .../Python on macOS), so pgrep/pkill find the
+# server and never the recipe shell, whose command line contains the same text
+WWW_PROC  = ^[^ ]*[Pp]ython[^ ]* -m http.server $(WWW_PORT) --bind 127.0.0.1 --directory $(DEV)/samples/www
 www: | $(OBJ)
-	@pgrep -f "http.server $(WWW_PORT) --bind 127.0.0.1 --directory $(DEV)/samples/www" >/dev/null || \
+	@pgrep -f "$(WWW_PROC)" >/dev/null || \
 	  ( nohup python3 -m http.server $(WWW_PORT) --bind 127.0.0.1 --directory $(DEV)/samples/www \
 	    >> build/logs/www.log 2>&1 & sleep 1 )
 
@@ -89,11 +95,11 @@ run: all www build/cpcse-home/cpcse.ini
 shot: all www | $(OBJ)
 	cd $(CPCSE) && $(CPCSE_ENV) ./cpcse --shot $(DEV)/build/shot.bmp --model cpc6128 \
 	  --frames $(FRAMES) --m4 $(M4SD) --type '$(CMD)\n' > $(DEV)/build/logs/shot.log 2>&1
-	sips -s format png build/shot.bmp --out build/shot.png > /dev/null
+	$(if $(filter Darwin,$(UNAME)),sips -s format png build/shot.bmp --out build/shot.png > /dev/null,python3 -I tools/bmp2png.py build/shot.bmp build/shot.png)
 	@echo "screenshot: build/shot.png"
 
 stop:
-	@pkill -f "http.server $(WWW_PORT) --bind 127.0.0.1 --directory $(DEV)/samples/www" || true
+	@pkill -f "$(WWW_PROC)" || true
 
 clean:
 	rm -rf build/obj build/*.BIN build/*.BAS build/*.dsk build/*.ihx build/*.map build/*.lk build/*.noi build/shot.*

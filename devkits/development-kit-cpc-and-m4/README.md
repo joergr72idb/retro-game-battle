@@ -1,12 +1,12 @@
 # Development Kit for the Amstrad/Schneider CPC and the M4 Board
 
-A self-contained toolchain on macOS for CPC programs that use the M4 board's network, tested in an
-emulator whose M4 reaches the internet through the Mac. Everything is built into `opt/` inside this
-folder; nothing is installed system-wide except a few Homebrew packages.
+A self-contained toolchain for macOS and Linux for CPC programs that use the M4 board's network, tested in an
+emulator whose M4 reaches the internet through the computer's network. Everything is built into `opt/` inside this
+folder; nothing is installed system-wide except a few Homebrew or apt packages.
 
 | Tool | Version | What it is |
 |---|---|---|
-| [SDCC](https://sdcc.sourceforge.net/) | 4.6.0 (Homebrew) | C compiler for the Z80 |
+| [SDCC](https://sdcc.sourceforge.net/) | 4.6.0 (Homebrew) / 4.5.0 (apt) | C compiler for the Z80 |
 | [RASM](https://github.com/EdouardBERGE/rasm) | 3.3.3 | Z80 assembler, writes AMSDOS files directly |
 | [iDSK](https://github.com/cpcsdk/idsk) | 0.20 | Creates `.dsk` disc images |
 | [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) | 0.16.0 | Emulator (MIT) with M4 board: SD card = a Mac folder, WiFi = the Mac's network, `\|HTTPGET`/`\|HTTPMEM`, TCP sockets. Includes the CPC ROMs and Duke's M4 ROM |
@@ -22,9 +22,13 @@ CPCSyntaxError (CPC 6128 + M4) ── M4 WiFi = the Mac's network ──► test
 ## Setup
 
 ```sh
-tools/setup.sh                 # Homebrew packages + builds everything missing into opt/
-tools/setup.sh cpcse           # rebuild single parts: rasm idsk cpcse
+tools/setup-macos.sh           # macOS: Homebrew packages + builds everything missing into opt/
+tools/setup-linux.sh           # Linux (Debian/Ubuntu): checks the apt packages, then the same
+tools/setup-linux.sh cpcse     # rebuild single parts: rasm idsk cpcse
 ```
+
+Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
+`sudo apt install build-essential git cmake ninja-build libsdl2-dev libgl-dev sdcc`
 
 ## Use
 
@@ -79,7 +83,7 @@ the library takes and returns them in normal order.
 
 ## Built on the work of others
 
-This kit is only glue: a setup script that downloads and builds other people's software at fixed
+This kit is only glue: setup scripts that download and build other people's software at fixed
 versions, plus Makefiles and settings that wire it together. Everything that does the real work
 comes from these projects - used unmodified. **A warm thank you to all their maintainers and
 contributors!**
@@ -93,5 +97,5 @@ contributors!**
   about; our `lib/m4` is written from his documented command interface
   ([m4info.txt](http://www.spinpoint.org/cpc/m4info.txt))
 
-**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew) or Debian/Ubuntu packages, [SDL](https://github.com/libsdl-org/SDL),
 [CMake](https://github.com/Kitware/CMake) and [Ninja](https://github.com/ninja-build/ninja).
