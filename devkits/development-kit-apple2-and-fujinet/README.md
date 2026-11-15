@@ -17,6 +17,7 @@ with FujiNet built in. Everything is built into `opt/` inside this folder.
 tools/setup-macos.sh                 # macOS: Homebrew packages + everything missing into opt/
 tools/setup-linux.sh                 # Linux (Debian/Ubuntu): checks the apt packages, then the same
 make run DISK=path/to/disk.po        # put the disk on the emulated FujiNet's SD card, start the emulator
+make shot DISK=disk.po KEYS='wait 400; type Hello; key RETURN'   # headless run, see below
 ```
 
 Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
@@ -31,12 +32,33 @@ with `PRODOS` and the ProDOS boot blocks, the first `*.SYSTEM` file starts by it
 `clients/apple2-tcp/Makefile` in [Retro Game Battle](https://github.com/joergr72idb/retro-game-battle)). Call `network_init()` before other fujinet-lib
 network calls - on the Apple II it finds the network device on the SmartPort.
 
+## Headless runs: `make shot`
+
+For checking a program without watching it (scripts, AI assistants): `make shot` runs the emulator
+without a window, boots `DISK` straight away (CONFIG off, the disk in drive slot 1), types `KEYS` and
+after `FRAMES` frames (default 900 = 15 s at 60 Hz) writes
+
+- `build/shot.png` - the screen,
+- `build/shot.txt` - the 40-column text screen as plain text (page 1, $0400),
+- `build/shot.fujinet.log` - FujiNet's console output.
+
+Without `DISK` it stays in CONFIG. `KEYS`: commands separated by `;`, one after another from
+power-on - `wait N` (frames), `type TEXT` (arrives as written, upper and lower case), `key NAME [N]`
+(RETURN ESC TAB BACKSPACE DELETE UP DOWN LEFT RIGHT SPACE, a character, `CTRL-x`), `joy DIR [N]`
+(the paddles as a joystick: left, right, up, down, upleft, ..., center), `button 0|1 [N]` (Open /
+Closed Apple), `reset [cold]`. The script is checked before the emulator starts.
+
+It is `tools/a2shot.c`, a small program on FujiNet Go's own session library (built by the setup
+script in `build/fngo`; the a2shot binary is GPL-3 like it). It has its own settings and SD card in
+`build/shot-config` and `build/shot-data`, so `make run` keeps its CONFIG settings. The emulator's
+ports are fixed, so it refuses while `make run` is open.
+
 ## Notes
 
 - The emulator keeps settings and data in `build/xdg-config` and `build/xdg-data` (`XDG_*`), not in
   the home folder. Its FujiNet SD card: `build/xdg-data/fujinet-go-apple2/fujinet/SD`.
-- No remote control: CONFIG and the program are driven by hand. FujiNet's log is
-  `build/xdg-data/fujinet-go-apple2/fujinet/fujinet-console.log`.
+- `make run` has no remote control: CONFIG and the program are driven by hand (or use `make shot`).
+  FujiNet's log is `build/xdg-data/fujinet-go-apple2/fujinet/fujinet-console.log`.
 - Ports 1985 and 64001 (127.0.0.1) - no conflict with the Atari (8000, UDP 9997), C64 (8001, 1541)
   and CPC (8765) kits or the game server (6502, 8080).
 - FujiNet's own `autorun.po` boots without ProDOS: its boot block loads `CONFIG.SYSTEM` by name, so it
