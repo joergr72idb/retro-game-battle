@@ -1,16 +1,16 @@
 # Development Kit for the C64 and FujiNet
 
-A self-contained toolchain on macOS for writing C64 programs that use the FujiNet, and testing them
+A self-contained toolchain for macOS and Linux for writing C64 programs that use the FujiNet, and testing them
 in VICE with an emulated FujiNet on the serial bus. Everything is built into `opt/` inside this
-folder; nothing is installed system-wide except a few Homebrew packages.
+folder; nothing is installed system-wide except a few Homebrew or apt packages.
 
 | Tool | Version | What it is |
 |---|---|---|
 | [cc65](https://github.com/cc65/cc65) | V2.19 (git) | C compiler (`cl65`) and the **ca65** assembler |
 | [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) | 5.1.1 | C library for the FujiNet (network, clock, FujiNet device) |
 | [VICE (FujiNet fork)](https://github.com/dillera/vice-fn) | trunk, 2026-11-01 | C64 emulator with real-device support for units 8–30, plus `petcat` and `c1541` |
-| NetIEC bridge | same | `libopencbm.dylib`: sends the emulated serial bus over TCP to FujiNet-PC |
-| [FujiNet-PC](https://github.com/FujiNetWIFI/fujinet-firmware) | master `8cc29e8b5` | FujiNet firmware for the Commodore bus (incl. the Meatloaf drive code) as a Mac program |
+| NetIEC bridge | same | `libopencbm.dylib` (Linux: `.so`): sends the emulated serial bus over TCP to FujiNet-PC |
+| [FujiNet-PC](https://github.com/FujiNetWIFI/fujinet-firmware) | master `8cc29e8b5` | FujiNet firmware for the Commodore bus (incl. the Meatloaf drive code) as a Mac/Linux program |
 
 ```
 cl65 / petcat ──► build/*.prg ──► VICE x64sc ── bridge (libopencbm) ── TCP 1541 (NetIEC) ──► FujiNet-PC
@@ -21,11 +21,15 @@ cl65 / petcat ──► build/*.prg ──► VICE x64sc ── bridge (libopenc
 ## Setup
 
 ```sh
-tools/setup.sh                 # Homebrew packages + builds everything missing into opt/
-tools/setup.sh vice            # rebuild single parts: cc65 fujinet-lib fujinet-pc vice
+tools/setup-macos.sh           # macOS: Homebrew packages + builds everything missing into opt/
+tools/setup-linux.sh           # Linux (Debian/Ubuntu): checks the apt packages, then the same
+tools/setup-linux.sh vice      # rebuild single parts: cc65 fujinet-lib fujinet-pc vice
 ```
 
-Versions are pinned at the top of `tools/setup.sh`. Build logs go to `build/logs/`.
+Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
+`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libsdl2-image-dev libmbedtls-dev python3-venv gh unzip curl xa65 dos2unix bison flex texinfo`
+
+Versions are pinned at the top of both setup scripts (keep them in step). Build logs go to `build/logs/`.
 
 ## Use
 
@@ -40,7 +44,7 @@ make stop                      # stops this kit's FujiNet-PC
 
 **FujiNet CONFIG on the C64:** pick a host with the cursor keys + RETURN, a file with RETURN, then
 the drive slot (1–8 or cursor keys) and RETURN (read only) or W (read/write). The C64 **←** key
-(Mac: **§** or **ß**) leaves CONFIG and boots the mounted disk.
+(Mac: **§** or **ß**; German PC keyboard on Linux: **ß**) leaves CONFIG and boots the mounted disk.
 
 Samples in `samples/`:
 - `hello.c` – C with fujinet-lib: asks the FujiNet for its version, hostname and IP address.
@@ -72,7 +76,7 @@ Without a running emulator, `opt/vice-bridge/netiecctl` talks to FujiNet-PC dire
 
 ## Built on the work of others
 
-This kit is only glue: a setup script that downloads and builds other people's software at fixed
+This kit is only glue: setup scripts that download and build other people's software at fixed
 versions, plus Makefiles and settings that wire it together. Everything that does the real work
 comes from these projects - used unmodified. **A warm thank you to all their maintainers and
 contributors!**
@@ -87,7 +91,7 @@ contributors!**
   Commodore bus, including the drive code from [Meatloaf](https://github.com/idolpx/meatloaf)
 - the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
 
-**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL) and
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew) or Debian/Ubuntu packages, [SDL](https://github.com/libsdl-org/SDL) and
 [SDL_image](https://github.com/libsdl-org/SDL_image), [Mbed TLS](https://github.com/Mbed-TLS/mbedtls),
 [CMake](https://github.com/Kitware/CMake), [pkgconf](https://github.com/pkgconf/pkgconf),
 [xa](https://www.floodgap.com/retrotech/xa/), [GNU Bison](https://www.gnu.org/software/bison/),

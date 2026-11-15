@@ -1,6 +1,6 @@
 # Development kit for the C64 + FujiNet: cc65 (C + ca65 assembler), fujinet-lib, VICE (FujiNet fork
 # with the NetIEC bridge, incl. petcat and c1541) and FujiNet-PC built for IEC (incl. Meatloaf drives).
-# All tools live in opt/ (built by tools/setup.sh).
+# All tools live in opt/ (built by tools/setup-macos.sh or tools/setup-linux.sh).
 #
 #   make              build the samples into build/ (PRGs + build/samples.d64)
 #   make run          FujiNet-PC + VICE with build/hello-c.prg (other program: make run PRG=path)
@@ -17,6 +17,10 @@ FNLIBA    := $(wildcard $(FNLIB)/fujinet-c64-*.lib)
 VICE      := $(DEV)/opt/vice/bin
 BRIDGE    := $(DEV)/opt/vice-bridge
 FUJINET   := $(DEV)/opt/fujinet-pc
+# GNU sed (Linux) and BSD sed (macOS) differ in -i
+SED_I     := $(if $(filter Darwin,$(shell uname -s)),sed -i '',sed -i)
+# where VICE finds the bridge (libopencbm): DYLD_ on macOS, LD_ on Linux
+LIBPATH   := $(if $(filter Darwin,$(shell uname -s)),DYLD_LIBRARY_PATH,LD_LIBRARY_PATH)
 export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 
 CFLAGS    := -t c64 -O -I $(FNLIB) -g
@@ -57,8 +61,8 @@ NETIEC_PORT ?= 1541
 # FujiNet-PC: NetIEC (TCP) on NETIEC_PORT, web UI http://127.0.0.1:$(WEB_PORT) (local only), SD card = opt/fujinet-pc/SD
 # The [BOIP] port in fnconfig.ini is set from NETIEC_PORT on every start.
 fujinet: | build
-	@sed -i '' '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETIEC_PORT)/' $(FUJINET)/fnconfig.ini
-	@pgrep -f "$(FUJINET)/fujinet" >/dev/null || \
+	@$(SED_I) '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETIEC_PORT)/' $(FUJINET)/fnconfig.ini
+	@pgrep -f "$(FUJINET)/[f]ujinet" >/dev/null || \
 	  ( nohup $(DEV)/tools/run-fujinet -u http://127.0.0.1:$(WEB_PORT) >> $(DEV)/build/logs/fujinet.log 2>&1 & sleep 2 )
 
 # -config/-logfile: VICE's settings and log live in build/, never in ~/.config or ~/.local
@@ -67,17 +71,18 @@ VICE_ARGS := -config $(DEV)/build/vicerc -logfile $(DEV)/build/logs/vice-run.log
              -keymap 0 -symkeymap $(DEV)/keymaps/c64-mac-de.vkm
 
 run: $(PRG) fujinet
-	DYLD_LIBRARY_PATH=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) $(VICE_UNITS) -autostart $(PRG)
+	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) $(VICE_UNITS) -autostart $(PRG)
 
 # VICE with FujiNet as drive 8 and no program: for FujiNet's CONFIG (LOAD"CONFIG.PRG",8)
 config: fujinet
-	DYLD_LIBRARY_PATH=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) \
+	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) \
 	  $(foreach u,8 16 29 30,$(if $(filter 8,$(u)),-drive8type 0 +drive8truedrive -devicebackend8 2 -trapdevice8,-realdevice$(u)))
 
 # only this kit's instance (matched by its path), never other projects' FujiNet-PC
+# ([f]ujinet: the regex still matches the process, but not the recipe shell, whose command line holds the pattern)
 stop:
-	@pkill -f "$(DEV)/tools/run-fujinet" || true
-	@pkill -f "$(FUJINET)/fujinet" || true
+	@pkill -f "$(DEV)/tools/[r]un-fujinet" || true
+	@pkill -f "$(FUJINET)/[f]ujinet" || true
 
 clean:
 	rm -f build/*.prg build/*.d64 build/*.map build/*.lbl build/*.o
