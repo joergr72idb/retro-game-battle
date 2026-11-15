@@ -1,7 +1,7 @@
 #!/bin/sh
-# Builds the whole toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested.
-#   tools/setup.sh            build everything that is missing
-#   tools/setup.sh cc65 ...   (re)build only the named parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
+# Builds the whole toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested (Linux: setup-linux.sh).
+#   tools/setup-macos.sh            build everything that is missing
+#   tools/setup-macos.sh cc65 ...   (re)build only the named parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
 set -e
 
 K="$(cd "$(dirname "$0")/.." && pwd)"
