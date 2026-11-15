@@ -13,7 +13,12 @@ Toolchain only - real programs live in their own project folders and point `DEV`
 - fujinet-lib must be >= 5.1.1 for the C64 (reads the per-transaction status byte of current firmware).
 - Strings from FujiNet are ASCII - convert to PETSCII before printing (`ascii2pet()` in samples/hello.c).
 - Meatloaf's HTTP/TNFS/ML: file systems are not in FujiNet-PC: `OPEN ...,8,...,"http://..."` can't be emulated.
-- Verify without watching the screen: start x64sc with `-remotemonitor`, then
+- Check a program headless: `make shot [PRG=] [FRAMES=] [KEYS=]`, then read `build/shot.txt` / `build/shot.png`
+  (tools/c64shot.py: x64sc with SDL dummy video/sound and `-binarymonitor` on MON_PORT 6520; keyboard feed 0x72,
+  keymatrix 0x74, joystick 0xa3 - VICE holds them N frames itself; display 0x84 + palette 0x91; text screen found via
+  $D018/$DD00). Timing is wall clock at 50 fps (VICE runs at real speed). Tested 2026-11-15: hello-c, text, F1, cursor,
+  matrix key, both joysticks + fire. cc65 programs switch to the lower case charset - the text dump follows $D018.
+- By hand: start x64sc with `-remotemonitor`, then
   `printf 'm 0400 07e7\n' | nc -w 2 127.0.0.1 6510 > build/logs/screen.txt; tools/screen.py build/logs/screen.txt`.
   `grep -a 'Fuji cmd' build/logs/fujinet.log` lists commands that reached FujiNet-PC (`-a`: the log can contain NULs).
 - Keys from outside: the monitor's `keybuf` drops control characters (cursor keys etc.) - write them

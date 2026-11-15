@@ -40,7 +40,22 @@ make run PRG=build/hello-bas.prg
 make run UNITS="8 16 29 30"    # also drive 8 from FujiNet-PC (Meatloaf drive) instead of VICE's own
 make config                    # VICE with FujiNet as drive 8, for FujiNet's CONFIG: LOAD"CONFIG.PRG",8
 make stop                      # stops this kit's FujiNet-PC
+make shot                      # headless run, no window: build/shot.png + build/shot.txt
+make shot PRG=my.prg FRAMES=900 KEYS='wait 350; type hello; key RETURN; joy up+fire 20'
 ```
+
+`make shot` is for checking a program without watching it (scripts, AI assistants): VICE runs
+without a window for `FRAMES` frames (default 600 = 12 s PAL, timed by the clock), gets the keys and
+joystick moves in `KEYS` through its binary monitor (127.0.0.1:`MON_PORT`, default 6520), and at
+the end `build/shot.png` (the screen) and `build/shot.txt` (the text screen as plain text) are
+written. FujiNet-PC is started as for `make run` and keeps running (`make stop`).
+
+`KEYS` (`tools/c64shot.py`): commands separated by `;` - `wait N` (frames), `type TEXT` (through the
+keyboard buffer, as BASIC and cc65's `cgetc` read it; upper case letters come out shifted), `key NAME`
+(RETURN DEL HOME CLR UP DOWN LEFT RIGHT F1-F8 RUNSTOP SPACE or a character, also through the buffer),
+`press NAME [N]` (held in the keyboard matrix, for programs that scan it themselves; also RESTORE),
+`joy DIR [N]` / `joy1 DIR [N]` (port 2 / port 1: up, down, left, right, upleft, ..., with `+fire`, or
+`fire`). As on a real C64, joystick 1 also shows up as key presses.
 
 **FujiNet CONFIG on the C64:** pick a host with the cursor keys + RETURN, a file with RETURN, then
 the drive slot (1–8 or cursor keys) and RETURN (read only) or W (read/write). The C64 **←** key

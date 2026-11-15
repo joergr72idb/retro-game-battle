@@ -6,6 +6,9 @@
 #   make run          FujiNet-PC + VICE with build/hello-c.prg (other program: make run PRG=path)
 #   make config       FujiNet-PC + VICE with FujiNet as drive 8, for CONFIG.PRG
 #   make stop         stop this kit's FujiNet-PC
+#   make shot         headless run (no window) of PRG for FRAMES frames (default 600 = 12 s PAL), keys and
+#                     joystick from KEYS (tools/c64shot.py), screen -> build/shot.png, text screen -> build/shot.txt
+#                     e.g. make shot KEYS='wait 300; type hello; key RETURN; joy up+fire 20'
 #   make run NETIEC_PORT=1542 WEB_PORT=8003   other ports, e.g. next to another FujiNet-PC for IEC
 #
 # Before starting, tools/check-ports refuses to run when the ports are in use: another program on
@@ -37,7 +40,7 @@ VICE_UNITS := $(foreach u,$(UNITS),$(if $(filter 8 9 10 11,$(u)),\
                 -drive$(u)type 0 +drive$(u)truedrive -devicebackend$(u) 2 -trapdevice$(u),\
                 -realdevice$(u)))
 
-.PHONY: all run config fujinet stop clean
+.PHONY: all run config fujinet stop clean shot
 
 all: build/hello-c.prg build/hello-asm.prg build/hello-bas.prg build/samples.d64
 
@@ -86,6 +89,17 @@ config: fujinet
 	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) \
 	  $(foreach u,8 16 29 30,$(if $(filter 8,$(u)),-drive8type 0 +drive8truedrive -devicebackend8 2 -trapdevice8,-realdevice$(u)))
 
+# headless: VICE with SDL's dummy video and sound, driven through its binary monitor on MON_PORT
+# (127.0.0.1) by tools/c64shot.py: keys/joystick at the script's frames, then screen + text screen.
+FRAMES    ?= 600
+KEYS      ?=
+MON_PORT  ?= 6520
+shot: $(PRG) fujinet
+	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET) vice
+	rm -f build/shot.png build/shot.txt
+	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) python3 -I tools/c64shot.py $(MON_PORT) $(FRAMES) '$(KEYS)' \
+	  $(DEV)/build/shot -- $(VICE)/x64sc $(subst vice-run.log,vice-shot.log,$(VICE_ARGS)) $(VICE_UNITS) -autostart $(PRG)
+
 # only this kit's instance (matched by its path), never other projects' FujiNet-PC
 # ([f]ujinet: the regex still matches the process, but not the recipe shell, whose command line holds the pattern)
 stop:
@@ -93,4 +107,4 @@ stop:
 	@pkill -f "$(FUJINET)/[f]ujinet" || true
 
 clean:
-	rm -f build/*.prg build/*.d64 build/*.map build/*.lbl build/*.o
+	rm -f build/*.prg build/*.d64 build/*.map build/*.lbl build/*.o build/shot.*
