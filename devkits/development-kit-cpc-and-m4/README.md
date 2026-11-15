@@ -12,6 +12,7 @@ folder; nothing is installed system-wide except a few Homebrew or apt packages.
 | [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) | 0.16.0 | Emulator (MIT) with M4 board: SD card = a Mac folder, WiFi = the Mac's network, `\|HTTPGET`/`\|HTTPMEM`, TCP sockets. Includes the CPC ROMs and Duke's M4 ROM |
 | `lib/m4` | ours | C library for the M4: HTTP into memory, TCP client sockets, DNS |
 | `lib/cpc` | ours | SDCC startup code (`crt0.s`), `printf` and keyboard through the CPC firmware |
+| [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | 841f7c0, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP and HTTP) on the M4. GPL-3.0-or-later |
 
 ```
 sdcc / rasm ──► build/*.BIN (AMSDOS header) ──► m4sd/ (the emulated M4's SD card) + build/samples.dsk
@@ -25,6 +26,7 @@ CPCSyntaxError (CPC 6128 + M4) ── M4 WiFi = the Mac's network ──► test
 tools/setup-macos.sh           # macOS: Homebrew packages + builds everything missing into opt/
 tools/setup-linux.sh           # Linux (Debian/Ubuntu): checks the apt packages, then the same
 tools/setup-linux.sh cpcse     # rebuild single parts: rasm idsk cpcse
+tools/setup-linux.sh fujinet   # optional: fetch fujinet-network-cpc into src/ (also setup-macos.sh fujinet)
 ```
 
 Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
@@ -38,6 +40,7 @@ make www                       # test web server for the network samples (127.0.
 make run                       # emulator window, CPC 6128 with M4 (starts the test server too)
 make shot CMD='RUN"HELLOC"'    # headless run, screenshot -> build/shot.png (FRAMES=600 by default)
 make stop                      # stops the test web server
+make fujinet                   # optional: build/FNHELLO.BIN with fujinet-network-cpc, onto the SD card
 ```
 
 On the CPC (the M4's SD card is the current drive):
@@ -46,6 +49,7 @@ On the CPC (the M4's SD card is the current drive):
 RUN"HELLOC"                              C: M4 version, HTTP download into memory, TCP socket
 MEMORY &3FFF:LOAD"HELLOA":CALL &4000     assembler: prints a line, back to BASIC after a key
 RUN"HELLO.BAS"                           BASIC: |NETSTAT and |HTTPMEM (the game clients' pattern)
+RUN"FNHELLO"                             C with fujinet-network (after make fujinet): HTTP GET + TCP
 ```
 
 `RUN` of a binary resets the firmware: the CPC restarts when the program ends. To return to
@@ -67,6 +71,31 @@ command bytes to port `&FE00`, a write to `&FC00` starts the command, the answer
 M4 ROM (pointer at `&FF02`, socket table at `&FF06`). The M4 keeps IP addresses last octet first;
 the library takes and returns them in normal order.
 
+## Optional: the FujiNet network API (`fujinet-network-cpc`)
+
+For programs that should also run on the Atari, C64 or Apple II with a FujiNet:
+[fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) offers the network calls of
+FujiNet's fujinet-lib on top of `lib/m4`, so the same network code builds for all of them.
+
+```c
+network_init();
+network_open("N1:HTTP://127.0.0.1:8765/hello.txt", OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE);
+network_status("N1:", &waiting, &connected, &err);   /* err 136 = end of data */
+n = network_read_nb("N1:", buf, waiting);
+network_close("N1:");
+```
+
+`tools/setup-linux.sh fujinet` (or `setup-macos.sh fujinet`) clones it at the tested commit into
+`src/fujinet-network-cpc`; `make fujinet` builds the sample `samples/fnhello.c`. In your own program:
+compile `$(DEV)/src/fujinet-network-cpc/src/fujinet-network.c` with
+`-I $(DEV)/src/fujinet-network-cpc/include -I $(DEV)/lib/m4` and link it with `m4.rel` (add
+`-DFN_NO_HTTP` if you only need TCP: about 2.9 KB smaller). What works and what doesn't (no HTTPS,
+UDP or listening yet) is in its README.
+
+It is not part of the default setup because of its licence: the kit is MIT, the library is
+**GPL-3.0-or-later** (as fujinet-lib, so one program can use both). A program linking it is GPL-3
+too; `lib/m4` alone stays MIT.
+
 ## Notes
 
 - **Test server vs. real hardware:** the samples fetch from `127.0.0.1:8765`, the Mac running the
@@ -82,6 +111,9 @@ the library takes and returns them in normal order.
   (M4sockslib, cpc-sdcc) have no licence, so `lib/m4` is written from the documentation instead.
 
 ## Programs built with this kit
+
+- [Retro Game Battle](https://github.com/joergr72idb/retro-game-battle) - its CPC client uses
+  fujinet-network-cpc and shares its protocol code with the Atari, C64 and Apple II clients
 
 - [cpc-telnet](https://github.com/joergr72idb/cpc-telnet) - a telnet client for the CPC with the M4 board,
   made for the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs): 40 or 80 columns, ANSI

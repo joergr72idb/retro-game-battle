@@ -21,3 +21,7 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   `|HTTPGET`/`|HTTPMEM` are not emulated by the "1984" emulator - CPCSyntaxError does them.
 - Test server: `make www` (127.0.0.1:8765, samples/www). `build/logs/www.log` shows the requests that
   arrived - a quick way to verify network code without the screen.
+- Optional fujinet-network-cpc (GPL-3, our own repo): setup part `fujinet` clones it at `FNCPC_REV` into
+  `src/fujinet-network-cpc` (not in the default run - the kit stays MIT); `make fujinet` builds
+  samples/fnhello.c -> FNHELLO.BIN. Test: `make shot CMD='RUN"FNHELLO"' FRAMES=1200`, then `make stop`
+  (two GET /hello.txt in www.log). Bump `FNCPC_REV` in both setup scripts together.

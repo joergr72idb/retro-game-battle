@@ -2,6 +2,7 @@
 # Builds the toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested (Linux: setup-linux.sh).
 #   tools/setup-macos.sh              build everything that is missing
 #   tools/setup-macos.sh cpcse ...    (re)build only the named parts: rasm idsk cpcse
+#   tools/setup-macos.sh fujinet      optional: fetch fujinet-network-cpc (fujinet-lib's network API, GPL-3)
 # SDCC comes from Homebrew (brew install sdcc).
 set -e
 
@@ -13,6 +14,7 @@ JOBS="$(sysctl -n hw.ncpu)"
 RASM_TAG=v3.3.3
 IDSK_TAG=v0.20
 CPCSE_TAG=v0.16.0               # CPCSyntaxError changes almost daily - update on purpose, then retest
+FNCPC_REV=841f7c0               # fujinet-network-cpc (optional part "fujinet", as tested 2026-11-15)
 
 mkdir -p "$SRC" "$OPT" "$LOG"
 
@@ -45,6 +47,14 @@ build_idsk() {
     ls "$OPT/idsk/iDSK"
 }
 
+# optional, not part of the default run: a source library (GPL-3.0-or-later), compiled by the
+# programs that use it - here by `make fujinet`
+get_fujinet() {
+    step fujinet-network-cpc fujinet
+    clone joergr72idb/fujinet-network-cpc fujinet-network-cpc "$FNCPC_REV" >"$LOG/fujinet.log" 2>&1
+    ls "$SRC/fujinet-network-cpc/src/fujinet-network.c"
+}
+
 build_cpcse() {
     step CPCSyntaxError cpcse
     clone WacKEDmaN/CPCSyntaxError CPCSyntaxError "$CPCSE_TAG"
@@ -65,7 +75,7 @@ if [ $# -eq 0 ]; then
 else
     for part in "$@"; do
         case "$part" in
-            rasm) build_rasm ;; idsk) build_idsk ;; cpcse) build_cpcse ;;
+            rasm) build_rasm ;; idsk) build_idsk ;; cpcse) build_cpcse ;; fujinet) get_fujinet ;;
             *) echo "unknown part: $part"; exit 1 ;;
         esac
     done
