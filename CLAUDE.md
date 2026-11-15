@@ -26,4 +26,9 @@ Toolchain only - real programs live in their own project folders and point `DEV`
 - Ports: web UI 127.0.0.1:8001, NetIEC TCP 1541 (Makefile `WEB_PORT`/`NETIEC_PORT`; `make fujinet` writes the
   [BOIP] port into fnconfig.ini, the bridge gets `NETIEC_PORT`). The Atari kit uses 8000 + UDP 9997 - both kits
   run at the same time (tested).
+- `make fujinet` runs `tools/check-ports` first (refuses when another program listens on WEB_PORT or
+  NETIEC_PORT - FujiNet-PC is the TCP server, VICE's bridge the client); `make run`/`config` also refuse when
+  something is already connected to NETIEC_PORT (a second VICE). Like the Atari kit's check (2026-11-15).
+  Tested: `make run NETIEC_PORT=1542 WEB_PORT=8003` works; afterwards fnconfig.ini keeps that port until the
+  next `make fujinet`.
 - Start/stop FujiNet-PC only via `make fujinet` / `make stop`: they match this kit's instance by its full path.

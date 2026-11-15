@@ -6,6 +6,11 @@
 #   make run          FujiNet-PC + VICE with build/hello-c.prg (other program: make run PRG=path)
 #   make config       FujiNet-PC + VICE with FujiNet as drive 8, for CONFIG.PRG
 #   make stop         stop this kit's FujiNet-PC
+#   make run NETIEC_PORT=1542 WEB_PORT=8003   other ports, e.g. next to another FujiNet-PC for IEC
+#
+# Before starting, tools/check-ports refuses to run when the ports are in use: another program on
+# WEB_PORT or NETIEC_PORT (e.g. another FujiNet-PC - our VICE would talk to it), and for run/config
+# another VICE already connected to NETIEC_PORT (two C64s on one FujiNet-PC).
 #
 # FujiNet devices on the emulated bus: 16 network, 29 clock, 30 FujiNet. More with
 #   make run UNITS="8 16 29 30"   (drive 8 from FujiNet-PC instead of VICE's own drive)
@@ -61,6 +66,7 @@ NETIEC_PORT ?= 1541
 # FujiNet-PC: NetIEC (TCP) on NETIEC_PORT, web UI http://127.0.0.1:$(WEB_PORT) (local only), SD card = opt/fujinet-pc/SD
 # The [BOIP] port in fnconfig.ini is set from NETIEC_PORT on every start.
 fujinet: | build
+	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET)
 	@$(SED_I) '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETIEC_PORT)/' $(FUJINET)/fnconfig.ini
 	@pgrep -f "$(FUJINET)/[f]ujinet" >/dev/null || \
 	  ( nohup $(DEV)/tools/run-fujinet -u http://127.0.0.1:$(WEB_PORT) >> $(DEV)/build/logs/fujinet.log 2>&1 & sleep 2 )
@@ -71,10 +77,12 @@ VICE_ARGS := -config $(DEV)/build/vicerc -logfile $(DEV)/build/logs/vice-run.log
              -keymap 0 -symkeymap $(DEV)/keymaps/c64-mac-de.vkm
 
 run: $(PRG) fujinet
+	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET) vice
 	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) $(VICE_UNITS) -autostart $(PRG)
 
 # VICE with FujiNet as drive 8 and no program: for FujiNet's CONFIG (LOAD"CONFIG.PRG",8)
 config: fujinet
+	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET) vice
 	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) $(VICE)/x64sc $(VICE_ARGS) \
 	  $(foreach u,8 16 29 30,$(if $(filter 8,$(u)),-drive8type 0 +drive8truedrive -devicebackend8 2 -trapdevice8,-realdevice$(u)))
 
