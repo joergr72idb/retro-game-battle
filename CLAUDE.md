@@ -237,7 +237,12 @@ any client in the future.
 - Tested: CPC in the headless emulator against the server (port 6602) and a bot (Tron, Artillery),
   and against a fake server that logs the CPC's lines (HELLO, GAME, MOVE U/L, FIRE x3, BYE).
   Atari (build 4): played by the user in atari800 + FujiNet-PC against the CPC client (2026-11-15).
-  C64, Apple II: built only so far.
+  C64 (build 3): VICE + the C64 kit's FujiNet-PC, keys via VICE's remote monitor (`keybuf`; Space
+  only via the keyboard buffer $0277/$C6): server 6602 + bot (C64 won), logging test server (HELLO,
+  GAME, MOVE U/L/R/D, FIRE, BYE). Apple II (build 3): FujiNet Go with `configenabled=0` + [Mount1]
+  in its fnconfig.ini (boots the disk without CONFIG), a test build with scripted keys/stick (the
+  emulator takes no outside input): same lines on the test server, a Tron game vs the bot on 6602.
+  Both 2026-11-15; not yet played by hand (joystick, real keyboard).
 - **Atari `make run` vs the Blues BBS:** both use NetSIO 9997 and web port 8000. With the BBS
   running, the kit's FujiNet-PC attaches to the BBS's atari800 (and the client's atari800 gets no
   FujiNet: self test); with the BBS's atari800 stopped, its run-fujinet loop restarts its FujiNet-PC,
