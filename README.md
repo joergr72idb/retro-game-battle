@@ -93,7 +93,7 @@ FujiNet Go Apple II). Each client has a step-by-step `BUILD.md`; ready-made imag
 `disk-images/` (no Apple II image - it would contain ProDOS). How to build the kits and run each
 client in its emulator: [`docs/howto-devkits.md`](docs/howto-devkits.md).
 Another program built with the CPC kit: [cpc-telnet](https://github.com/joergr72idb/cpc-telnet), a
-telnet client for the CPC + M4 (made for the [Berlin Blues BBS](https://github.com/joergr72idb/blues-bbs)).
+telnet client for the CPC + M4 (made for the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs)).
 
 The HTTP-polling BASIC clients (C64 Meatloaf, C64 WiC64, CPC `|HTTPMEM`) were dropped on
 2026-11-14: they waited up to 0.3-1.3 s per tick for the network while the server runs 250 ms
