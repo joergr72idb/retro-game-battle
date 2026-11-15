@@ -262,3 +262,6 @@ any client in the future.
   AGAIN") was written into the lines above. `plat_putc` now scrolls screen + colour RAM itself at the
   bottom line. Checked in the hands-free run (end screen in order). `disk-images/c64/rgb.d64` rebuilt
   (192.168.17.138:6502).
+- The test is in the repo: `tools/handsfree_test.sh` (see tools/README.md). It runs the server through a small
+  wrapper that sets `config.RESULTS_CSV_PATH`/`LOG_FILE_PATH` to `build/handsfree/` - test matches never reach the
+  event's `game_results.csv`. First run 2026-11-16: all four PASS (moves 19/20/10/21).

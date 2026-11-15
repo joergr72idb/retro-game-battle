@@ -8,3 +8,6 @@ game_battle_server.log
 
 # fonts are downloaded by each user (licence), see assets/font/README.md
 assets/font/*.ttf
+
+# tools/handsfree_test.sh results
+/build/
