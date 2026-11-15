@@ -1,0 +1,61 @@
+#!/bin/sh
+# Checks that this kit's FujiNet-PC and VICE can start without meeting another instance:
+#   check-ports WEB_PORT NETIEC_PORT FUJINET_DIR [vice]
+# Fails (exit 1, with the reason) when
+#   - another program listens on WEB_PORT (FujiNet-PC's web UI),
+#   - another program listens on TCP NETIEC_PORT: e.g. another FujiNet-PC built for IEC - ours could
+#     not take the port, and our VICE would talk to that one instead,
+#   - with "vice" (make run/config): another program is already connected to NETIEC_PORT - a second
+#     VICE on the same FujiNet-PC (two C64s on one IEC bus).
+# This kit's own FujiNet-PC (FUJINET_DIR/fujinet) is allowed. Linux and macOS (ss or lsof, ps).
+WEB=$1 NETIEC=$2 OWN=$3 MODE=$4
+[ -n "$WEB" ] && [ -n "$NETIEC" ] && [ -n "$OWN" ] || { echo "usage: $0 WEB_PORT NETIEC_PORT FUJINET_DIR [vice]" >&2; exit 2; }
+
+listeners() {   # $1 = port: pids listening on that TCP port
+    if command -v ss >/dev/null 2>&1; then      # Linux
+        ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2
+    else                                        # macOS
+        lsof -nP -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null
+    fi | sort -u
+}
+
+clients() {     # $1 = port: pids with a TCP connection TO that port (not the accepting side)
+    if command -v ss >/dev/null 2>&1; then
+        ss -tnpH state established "dport = :$1" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2
+    else        # lsof also lists the accepting side: keep the sockets whose remote side is the port
+        lsof -nP -iTCP:"$1" -sTCP:ESTABLISHED -Fpn 2>/dev/null | awk -v p=":$1" '
+            /^p/ { pid = substr($0, 2) }
+            /^n/ { n = $0; sub(/.*->/, "", n); if (substr(n, length(n) - length(p) + 1) == p) print pid }'
+    fi | sort -u
+}
+
+args() { ps -o args= -p "$1" 2>/dev/null; }
+
+is_own() { case "$(args "$1")" in "$OWN/fujinet"*) return 0 ;; esac; return 1; }
+
+fail=0
+for pid in $(listeners "$WEB"); do
+    is_own "$pid" && continue
+    echo "check-ports: web port $WEB is taken by pid $pid: $(args "$pid")" >&2
+    fail=1
+done
+for pid in $(listeners "$NETIEC"); do
+    is_own "$pid" && continue
+    echo "check-ports: NetIEC port $NETIEC is taken by pid $pid: $(args "$pid")" >&2
+    echo "             (another FujiNet-PC? our VICE would talk to it)" >&2
+    fail=1
+done
+if [ "$MODE" = vice ]; then
+    for pid in $(clients "$NETIEC"); do
+        echo "check-ports: pid $pid is already connected to NetIEC port $NETIEC: $(args "$pid")" >&2
+        echo "             (another VICE on this FujiNet-PC - close it first)" >&2
+        fail=1
+    done
+fi
+
+if [ $fail -ne 0 ]; then
+    echo "check-ports: stop the other instance, or use other ports:" >&2
+    echo "             make run NETIEC_PORT=1542 WEB_PORT=8003" >&2
+    exit 1
+fi
+exit 0

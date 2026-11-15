@@ -67,7 +67,10 @@ Without a running emulator, `opt/vice-bridge/netiecctl` talks to FujiNet-PC dire
 - Only the standard IEC protocol: no JiffyDOS or other fast loaders on the FujiNet units.
 - fujinet-lib programs built before 5.1.1 misread every reply from current firmware.
 - **Ports:** web UI `127.0.0.1:8001`, NetIEC TCP 1541 (`WEB_PORT` / `NETIEC_PORT` in the Makefile).
-  The Atari kit uses 8000 and UDP 9997, so both kits run side by side.
+  The Atari kit uses 8000 and UDP 9997, so both kits run side by side. `make run` checks the ports
+  first (`tools/check-ports`) and stops with the reason when another program (e.g. another
+  FujiNet-PC) has them, or when another VICE is already connected to this FujiNet-PC; then use
+  other ports: `make run NETIEC_PORT=1542 WEB_PORT=8003`.
 - The web UI has no login; it listens on 127.0.0.1 only, so it isn't reachable from the network.
 - **Keyboard:** `keymaps/c64-mac-de.vkm` = VICE's German map plus the C64 ← key on §, ß and `.
 - VICE's settings and log stay in `build/` (`-config build/vicerc`, `-logfile`), never in the home folder.
