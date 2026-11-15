@@ -84,7 +84,7 @@ the library takes and returns them in normal order.
 ## Programs built with this kit
 
 - [cpc-telnet](https://github.com/joergr72idb/cpc-telnet) - a telnet client for the CPC with the M4 board,
-  made for the [Berlin Blues BBS](https://github.com/joergr72idb/blues-bbs): 40 or 80 columns, ANSI
+  made for the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs): 40 or 80 columns, ANSI
   cursor sequences, writes the session to a text file on the SD card or a disc
 
 ## Built on the work of others
