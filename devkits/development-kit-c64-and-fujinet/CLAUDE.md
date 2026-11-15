@@ -2,12 +2,13 @@
 
 Toolchain only - real programs live in their own project folders and point `DEV` here.
 
-- Everything is built by `tools/setup.sh` into `opt/` (sources `src/`, logs `build/logs/`); never install tools
-  system-wide or into the home folder. FujiNet-PC's Python venv is `build/venv-fujinet`.
+- Everything is built by `tools/setup-macos.sh` / `tools/setup-linux.sh` (keep their pinned versions in step) into
+  `opt/` (sources `src/`, logs `build/logs/`); never install tools system-wide or into the home folder. FujiNet-PC's Python venv is `build/venv-fujinet`.
 - FujiNet-PC is built with `-p IEC` from a pinned master commit: the PC IEC target (NetIEC, PR #2299) is in no
-  release yet. Needs mbedTLS 3 via `MBEDTLS_ROOT_DIR`, like the Atari kit.
+  release yet. Needs mbedTLS 3 (macOS: via `MBEDTLS_ROOT_DIR`, like the Atari kit;
+  Linux: the system `libmbedtls-dev`).
 - VICE is dillera/vice-fn (not stock VICE): only it can hand units 12-30 to the bridge. Always start it with
-  `DYLD_LIBRARY_PATH=opt/vice-bridge`, `-config build/vicerc` and `-logfile build/logs/vice-run.log` (vice.log is the build log)
+  `DYLD_LIBRARY_PATH=opt/vice-bridge` (Linux: `LD_LIBRARY_PATH`), `-config build/vicerc` and `-logfile build/logs/vice-run.log` (vice.log is the build log)
   (otherwise it writes to ~/.config/vice and ~/.local/state/vice).
 - fujinet-lib must be >= 5.1.1 for the C64 (reads the per-transaction status byte of current firmware).
 - Strings from FujiNet are ASCII - convert to PETSCII before printing (`ascii2pet()` in samples/hello.c).
