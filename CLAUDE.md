@@ -233,8 +233,9 @@ any client in the future.
   `lib/fujinet-network-cpc` (git subtree of its own repo, GPL-3, same
   API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Update:
   `git subtree pull --prefix=lib/fujinet-network-cpc <repo> main --squash`.
-- Planned with the user: once this works, the repo moves to GPL-3 (the Atari/C64/Apple II binaries
-  link fujinet-lib, which is GPL-3), with the reason in the README.
+- Licence: GPL-3.0-or-later since 2026-11-15 (was MIT; the Atari/C64/Apple II binaries link
+  fujinet-lib, which is GPL-3) - reason in the README. `devkits/` stay MIT (own LICENSE each),
+  `lib/fujinet-network-cpc` is GPL-3 (own LICENSE).
 - Tested: CPC in the headless emulator against the server (port 6602) and a bot (Tron, Artillery),
   and against a fake server that logs the CPC's lines (HELLO, GAME, MOVE U/L, FIRE x3, BYE).
   Atari (build 4): played by the user in atari800 + FujiNet-PC against the CPC client (2026-11-15).

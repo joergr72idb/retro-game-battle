@@ -62,6 +62,8 @@ compatibility-filtering behavior with a `C64-WIC64` variant).
 - `docs/howto-devkits.md` - how to build the four development kits (Atari, C64, CPC, Apple II)
   and run each client in its emulator
 - `devkits/` - the four development kits themselves (build scripts, configs, our M4 library, samples)
+- `lib/fujinet-network-cpc/` - fujinet-lib's network calls (TCP) for the CPC + M4, so the CPC
+  client shares its code with the FujiNet clients (a git subtree of its own repository)
 - `docs/pap_diagrams.pdf` - PAP flowcharts for explaining the games to
   visitors (page 1) and the server logic (page 2); regenerate with
   `docs/pap_src/build.sh` from the `.dot` sources there
@@ -74,7 +76,7 @@ match, a `MOVE` only when the stick changes, `FIRE` on the button (Artillery).
 - `clients/atari/game_battle_atari_client.bas` - Atari XL/XE + FujiNet (Atari BASIC)
 - `clients/atari-tcp/` - Atari XL/XE + FujiNet (C, cc65 + fujinet-lib; boots directly as an XEX)
 - `clients/c64-tcp/` - C64 + FujiNet (C, cc65 + fujinet-lib)
-- `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + the M4 library)
+- `clients/cpc-tcp/` - Schneider/Amstrad CPC + M4 board (C, SDCC + fujinet-network-cpc on the M4 library)
 - `clients/apple2-tcp/` - Apple //e enhanced or later + FujiNet (C, cc65 + fujinet-lib)
 
 Game menu of each client (emulators, server on 127.0.0.1):
@@ -146,15 +148,31 @@ Each kit's README (`devkits/<kit>/README.md`) lists exactly what that kit builds
 
 ## License
 
-[MIT](LICENSE) - the server, the clients, the tools, the docs and the development kits in
-`devkits/` (each kit also carries its own `LICENSE`). Not covered, because not ours:
+GPL-3.0-or-later, see [LICENSE](LICENSE) - the server, the clients, the tools and the docs.
+
+Until 2026-11-15 this repo was under the MIT licence. Why it changed: the Atari, C64 and Apple II
+clients link FujiNet's [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib), which is GPL-3,
+so those programs - and the ready-made images in `disk-images/` - can only be passed on under
+GPL-3 anyway. Since 2026-11-15 all four C clients also share their code (`clients/common/`), the
+CPC through [fujinet-network-cpc](lib/fujinet-network-cpc), which is GPL-3 for the same reason. One
+licence for the whole repo is clearer than MIT sources with GPL programs. What was published under
+MIT before stays usable under MIT.
+
+With their own licence files:
+
+- `devkits/` - the development kits are MIT (each kit's `LICENSE`): they are projects of their own
+  and are used for other programs too;
+- `lib/fujinet-network-cpc/` - GPL-3.0-or-later (its `LICENSE`), a copy of its own repository.
+
+Not covered, because not ours:
 
 - the platform logos in `assets/logos/` - trademarks of their owners, shown only to mark which
   computer is playing;
 - `disk-images/atari/rgb.atr` - besides our client it contains Atari DOS 2.0S and the FujiNet tools,
   under their own terms;
 - the projects the kits download and build (see "Thanks") - each under its own licence. Nothing of
-  theirs is in this repo.
+  theirs is in this repo, except fujinet-lib compiled into the client programs in `disk-images/`
+  (GPL-3, source: https://github.com/FujiNetWIFI/fujinet-lib).
 
 ## Not in this pass
 
