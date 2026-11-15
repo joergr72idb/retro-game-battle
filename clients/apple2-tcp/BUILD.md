@@ -24,17 +24,19 @@ brew install gh
 gh auth login                          # the kit downloads the fujinet-lib release with gh
 ```
 
-Tested on an Apple Silicon Mac with Homebrew (2026-11-14). The kit's scripts are written for macOS;
-on Linux the same tools build, but `tools/setup.sh` would need adapting (Homebrew, `sysctl`).
+Tested on an Apple Silicon Mac with Homebrew (2026-11-14). On Linux (Debian/Ubuntu; the kit and this client tested on Ubuntu 26.04, 2026-11-15) use `tools/setup-linux.sh`
+instead, after installing its packages:
+`sudo apt install build-essential git cmake ninja-build python3 libsdl3-dev libboost-dev zlib1g-dev libgtk-4-dev libadwaita-1-dev gh unzip curl`
+(then `gh auth login`).
 
 ## 2. Build the Apple II kit (once)
 
 ```sh
 cd devkits/development-kit-apple2-and-fujinet       # from the root of this repository
-tools/setup.sh
+tools/setup-macos.sh                   # Linux: tools/setup-linux.sh
 ```
 
-`setup.sh` installs `cmake ninja sdl3 boost gh` with Homebrew and builds into the kit's `opt/`
+`setup-macos.sh` installs `cmake ninja sdl3 boost gh` with Homebrew and builds into the kit's `opt/`
 (sources in `src/`, logs in `build/logs/`):
 
 | Part | From | Used for |
@@ -45,7 +47,7 @@ tools/setup.sh
 | ProDOS 2.4.3 | [ProDOS-8/ProDOS8-Releases](https://github.com/ProDOS-8/ProDOS8-Releases) | `opt/prodos/PRODOS` + `bootblocks.bin` (blocks 0-1 of the release disk) |
 | FujiNet Go Apple II 0.10.0 | [FujiNetWIFI/fujinet-go-apple2-desktop](https://github.com/FujiNetWIFI/fujinet-go-apple2-desktop) | the emulator (only for testing) |
 
-Single parts can be rebuilt: `tools/setup.sh cc65 fujinet-lib cadius prodos fngo`.
+Single parts can be rebuilt: `tools/setup-macos.sh cc65 fujinet-lib cadius prodos fngo` (Linux: `tools/setup-linux.sh`, same names).
 
 Check: `opt/cc65/bin/cl65`, `opt/fujinet-lib/fujinet-apple2-*.lib`, `opt/cadius/cadius`,
 `opt/prodos/PRODOS` and `opt/prodos/bootblocks.bin` exist.
@@ -112,7 +114,7 @@ start it from there.
 ## Troubleshooting
 
 - **`gh: not logged in` / fujinet-lib download fails:** `gh auth login`, then
-  `tools/setup.sh fujinet-lib`.
+  `tools/setup-macos.sh fujinet-lib` (Linux: `tools/setup-linux.sh fujinet-lib`).
 - **ProDOS download fails:** the kit loads it from raw.githubusercontent.com. Don't use
   `releases.prodos8.com` instead - its certificate doesn't match, and switching certificate checks
   off is not a fix.

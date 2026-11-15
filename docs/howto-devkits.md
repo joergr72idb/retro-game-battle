@@ -1,8 +1,10 @@
 # How to: the development kits
 
-How to build the four macOS development kits the clients of this repo are built and tested with,
+How to build the four development kits the clients of this repo are built and tested with,
 and how to run each client in its emulator against a local server. Tested on an Apple Silicon Mac
-with Homebrew, 2026-11-14.
+with Homebrew, 2026-11-14. The steps below are the macOS ones; on Linux (Debian/Ubuntu, tested on
+Ubuntu 26.04, 2026-11-15) each kit has `tools/setup-linux.sh` instead, and its README lists the apt
+packages to install first (SDCC is then the apt one, 4.5.0).
 
 | Kit | Toolchain | Emulator + network | Client |
 |---|---|---|---|
@@ -15,7 +17,7 @@ The kits are part of this repo, in `devkits/`. They contain only our own files -
 Makefiles, emulator configs, a keymap, the CPC libraries `lib/m4` and `lib/cpc`, samples. No
 upstream sources and nothing copyrighted: every tool is cloned from its own repository and built
 on your machine (the full list with links is in the README, "Thanks"). The upstream projects are
-used unmodified, at the versions pinned in each `tools/setup.sh`.
+used unmodified, at the versions pinned in each kit's setup scripts.
 
 ```
 retro-game-battle/
@@ -27,15 +29,15 @@ retro-game-battle/
     └── development-kit-apple2-and-fujinet/
 ```
 
-The client Makefiles use `devkits/<kit>` once its `tools/setup.sh` has run (its `opt/` exists),
+The client Makefiles use `devkits/<kit>` once its setup script has run (its `opt/` exists),
 otherwise a checkout of the kit next to this repo (`../development-kit-...`); `make DEV=/path/to/kit`
 overrides both. The kits are also kept as separate repositories and merged in with
 `git subtree --squash`; to update one:
 `git subtree pull --prefix=devkits/<kit> <kit repository> main --squash`.
 
-Every kit has the same shape: `tools/setup.sh` clones the upstream sources into `src/` and builds
-everything into `opt/` inside the kit (nothing system-wide except Homebrew packages), build logs go
-to `build/logs/`, versions are pinned at the top of `setup.sh`, and a `Makefile` has `run`/`stop`
+Every kit has the same shape: `tools/setup-macos.sh` / `tools/setup-linux.sh` clone the upstream sources into `src/` and builds
+everything into `opt/` inside the kit (nothing system-wide except Homebrew or apt packages), build logs go
+to `build/logs/`, versions are pinned at the top of both scripts, and a `Makefile` has `run`/`stop`
 targets. Emulator settings are kept in `build/`, never in the home folder. `src/`, `opt/` and
 `build/` are not in git. The kit's own README has the details; this page is the overview and the
 build steps.
@@ -43,7 +45,7 @@ build steps.
 **Not included, because copyrighted - bring your own:**
 - the original Atari OS/BASIC ROMs (into `devkits/development-kit-atari-xl-and-fujinet/rom/`,
   ignored by git); without them atari800 uses the free AltirraOS
-- ProDOS 2.4.3 states no licence, so it is downloaded by `setup.sh` and never committed - nor is
+- ProDOS 2.4.3 states no licence, so it is downloaded by the setup script and never committed - nor is
   `clients/apple2-tcp/rgbtcp.po`, which contains it
 - the CPC firmware and Duke's M4 ROM come with CPCSyntaxError (Amstrad's firmware is free for
   emulators, the M4 ROM is included there with Duke's permission) and stay in the kit's `opt/`
@@ -59,7 +61,7 @@ troubleshooting for that platform.
 xcode-select --install                     # compilers, make, git
 # Homebrew: https://brew.sh
 brew install gh python@3.13
-gh auth login                              # setup.sh downloads fujinet-lib releases with gh
+gh auth login                              # the setup scripts download fujinet-lib releases with gh
 ```
 
 For the game server (needs Python 3.10+, the macOS system Python 3.9 is too old):
@@ -90,11 +92,11 @@ The FujiNet web UIs have no login and listen on 127.0.0.1 only.
 
 ```sh
 cd devkits/development-kit-atari-xl-and-fujinet
-tools/setup.sh                   # or single parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
+tools/setup-macos.sh             # Linux: tools/setup-linux.sh; or single parts: cc65 fujinet-lib atari800 fastbasic fujinet-pc
 make                             # samples -> build/*.xex
 ```
 
-What `setup.sh` does, step by step:
+What `setup-macos.sh` does, step by step (`setup-linux.sh` the same, with apt packages):
 
 | Part | Source | Build |
 |---|---|---|
@@ -147,7 +149,7 @@ Pitfalls:
 
 ```sh
 cd devkits/development-kit-c64-and-fujinet
-tools/setup.sh                   # or single parts: cc65 fujinet-lib fujinet-pc vice
+tools/setup-macos.sh             # Linux: tools/setup-linux.sh; or single parts: cc65 fujinet-lib fujinet-pc vice
 make
 ```
 
@@ -183,7 +185,7 @@ Pitfalls:
 
 ```sh
 cd devkits/development-kit-cpc-and-m4
-tools/setup.sh                   # or single parts: rasm idsk cpcse
+tools/setup-macos.sh             # Linux: tools/setup-linux.sh; or single parts: rasm idsk cpcse
 make
 ```
 
@@ -225,7 +227,7 @@ Pitfalls:
 
 ```sh
 cd devkits/development-kit-apple2-and-fujinet
-tools/setup.sh                   # or single parts: cc65 fujinet-lib cadius prodos fngo
+tools/setup-macos.sh             # Linux: tools/setup-linux.sh; or single parts: cc65 fujinet-lib cadius prodos fngo
 ```
 
 | Part | Source | Build |

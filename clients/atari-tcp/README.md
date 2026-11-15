@@ -11,7 +11,7 @@ Step by step, from an empty Mac to a running client, with checks and troubleshoo
 **[BUILD.md](BUILD.md)**. In short:
 
 Needs the Atari development kit (cc65, fujinet-lib, atari800 with NetSIO, FujiNet-PC):
-`devkits/development-kit-atari-xl-and-fujinet` in this repo once its `tools/setup.sh` has run,
+`devkits/development-kit-atari-xl-and-fujinet` in this repo once its setup script (`tools/setup-macos.sh` / `tools/setup-linux.sh`) has run,
 otherwise a checkout of the kit next to this repository. See `docs/howto-devkits.md`.
 
 ```sh

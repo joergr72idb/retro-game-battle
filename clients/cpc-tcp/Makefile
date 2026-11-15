@@ -8,11 +8,12 @@
 #
 # On the CPC: RUN"RGBTCP"
 
-# the kit: devkits/development-kit-cpc-and-m4 in this repo once its tools/setup.sh has run,
+# the kit: devkits/development-kit-cpc-and-m4 in this repo once its setup script has run,
 # otherwise a checkout of the kit next to this repo
 KIT     := development-kit-cpc-and-m4
 DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))
-SDCC    := $(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc
+# SDCC: Homebrew's on macOS, the one on PATH (apt) on Linux - as in the kit
+SDCC    := $(if $(filter Darwin,$(shell uname -s)),$(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc,$(shell command -v sdcc 2>/dev/null))
 SDASZ80 := $(dir $(SDCC))sdasz80
 IDSK    := $(DEV)/opt/idsk/iDSK
 

@@ -7,7 +7,7 @@
 #
 # rgbtcp.po is a ProDOS boot disk: ProDOS starts RGBTCP.SYSTEM by itself.
 
-# the kit: devkits/development-kit-apple2-and-fujinet in this repo once its tools/setup.sh has run,
+# the kit: devkits/development-kit-apple2-and-fujinet in this repo once its setup script has run,
 # otherwise a checkout of the kit next to this repo
 KIT     := development-kit-apple2-and-fujinet
 DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))

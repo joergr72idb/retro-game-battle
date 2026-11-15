@@ -9,7 +9,7 @@
 #
 # On the C64: LOAD"RGBTCP",8 and RUN (or autostart in VICE).
 
-# the kit: devkits/development-kit-c64-and-fujinet in this repo once its tools/setup.sh has run,
+# the kit: devkits/development-kit-c64-and-fujinet in this repo once its setup script has run,
 # otherwise a checkout of the kit next to this repo
 KIT     := development-kit-c64-and-fujinet
 DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))

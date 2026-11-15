@@ -10,7 +10,7 @@ Step by step, from an empty Mac to a bootable disk, with checks and troubleshoot
 **[BUILD.md](BUILD.md)**. In short:
 
 Needs the Apple II development kit (cc65, fujinet-lib >= 5.1.1, cadius, ProDOS 2.4.3): `devkits/development-kit-apple2-and-fujinet` in this repo once its
-`tools/setup.sh` has run, otherwise a checkout of the kit next to this repository. See
+setup script (`tools/setup-macos.sh` / `tools/setup-linux.sh`) has run, otherwise a checkout of the kit next to this repository. See
 `docs/howto-devkits.md`.
 
 ```sh

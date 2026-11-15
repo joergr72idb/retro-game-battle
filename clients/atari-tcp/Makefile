@@ -9,7 +9,7 @@
 #
 # The FujiNet boots rgbtcp.xex directly from its SD card (mount it like a disk image).
 
-# the kit: devkits/development-kit-atari-xl-and-fujinet in this repo once its tools/setup.sh has run,
+# the kit: devkits/development-kit-atari-xl-and-fujinet in this repo once its setup script has run,
 # otherwise a checkout of the kit next to this repo
 KIT     := development-kit-atari-xl-and-fujinet
 DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))
@@ -45,7 +45,7 @@ rgbtcp.xex: rgb_tcp.c build/server.txt
 # D1: the Atari boots that first, and a DOS/N: handler there clashes with the program).
 # FujiNet-PC is restarted first, then atari800 - in that order.
 run: rgbtcp.xex
-	-pkill -f "$(DEV)/opt/atari800/bin/atari800"
+	-pkill -f "$(DEV)/opt/atari800/bin/[a]tari800"
 	$(MAKE) -C $(DEV) stop
 	cp rgbtcp.xex $(FUJINET)/SD/rgbtcp.xex
 	python3 -I fn_boot.py $(FUJINET)/fnconfig.ini /rgbtcp.xex

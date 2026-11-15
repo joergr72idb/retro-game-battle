@@ -22,17 +22,19 @@ brew install gh
 gh auth login                          # the kit downloads the fujinet-lib release with gh
 ```
 
-Tested on an Apple Silicon Mac with Homebrew (2026-11-14). The kit's scripts are written for macOS;
-on Linux the same tools build, but `tools/setup.sh` would need adapting (Homebrew, `sysctl`).
+Tested on an Apple Silicon Mac with Homebrew (2026-11-14). On Linux (Debian/Ubuntu; the kit tested on Ubuntu 26.04, 2026-11-15) use `tools/setup-linux.sh`
+instead, after installing its packages:
+`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libsdl2-image-dev libmbedtls-dev python3-venv gh unzip curl xa65 dos2unix bison flex texinfo`
+(then `gh auth login`).
 
 ## 2. Build the C64 kit (once)
 
 ```sh
 cd devkits/development-kit-c64-and-fujinet         # from the root of this repository
-tools/setup.sh
+tools/setup-macos.sh                   # Linux: tools/setup-linux.sh
 ```
 
-`setup.sh` installs `autoconf automake cmake pkgconf sdl2 sdl2_image mbedtls@3 gh xa dos2unix bison`
+`setup-macos.sh` installs `autoconf automake cmake pkgconf sdl2 sdl2_image mbedtls@3 gh xa dos2unix bison`
 with Homebrew and builds into the kit's `opt/` (sources in `src/`, logs in `build/logs/`):
 
 | Part | From | Used for |
@@ -42,7 +44,7 @@ with Homebrew and builds into the kit's `opt/` (sources in `src/`, logs in `buil
 | VICE (FujiNet fork) | [dillera/vice-fn](https://github.com/dillera/vice-fn), commit `7f4e552` | `c1541` for the disk image; the emulator and its NetIEC bridge (`libopencbm.dylib`) for testing |
 | FujiNet-PC (IEC) | [FujiNetWIFI/fujinet-firmware](https://github.com/FujiNetWIFI/fujinet-firmware), commit `8cc29e8b5` | the FujiNet as a Mac program on the emulated serial bus (only for testing; NetIEC is on master only) |
 
-Single parts can be rebuilt: `tools/setup.sh cc65 fujinet-lib fujinet-pc vice`.
+Single parts can be rebuilt: `tools/setup-macos.sh cc65 fujinet-lib fujinet-pc vice` (Linux: `tools/setup-linux.sh`, same names).
 
 Check: `opt/cc65/bin/cl65`, `opt/fujinet-lib/fujinet-c64-*.lib` and `opt/vice/bin/c1541` exist (for
 building); `opt/vice/bin/x64sc`, `opt/vice-bridge/libopencbm.dylib` and `opt/fujinet-pc/fujinet`
@@ -92,7 +94,7 @@ On a German Mac keyboard the C64 **←** key is on **§** or **ß** (the kit's k
 ## Troubleshooting
 
 - **`gh: not logged in` / fujinet-lib download fails:** `gh auth login`, then
-  `tools/setup.sh fujinet-lib`.
+  `tools/setup-macos.sh fujinet-lib` (Linux: `tools/setup-linux.sh fujinet-lib`).
 - **"NO CONNECTION TO ..." in VICE every time:** VICE must load the FujiNet bridge -
   `DYLD_LIBRARY_PATH=opt/vice-bridge` and `NETIEC_PORT=1541`, which the kit's `make run` sets. Started
   by hand without them, VICE has no FujiNet. Also: FujiNet-PC must be running (`make fujinet` in the kit).

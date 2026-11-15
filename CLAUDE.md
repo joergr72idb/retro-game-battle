@@ -191,7 +191,7 @@ any client in the future.
 - `devkits/` holds the four kits (Atari, C64, CPC, Apple II), merged with `git subtree --squash`
   from their own repos (`../development-kit-*`, GitHub joergr72idb/development-kit-*). Change a kit
   in its own repo, then `git subtree pull --prefix=devkits/<kit> ../<kit> main --squash` here.
-- Only our own files: upstream tools are cloned and built by each `tools/setup.sh`, unmodified.
+- Only our own files: upstream tools are cloned and built by each kit's setup scripts (`tools/setup-macos.sh` / `tools/setup-linux.sh`), unmodified.
   Copyrighted things stay out (Atari ROMs in `rom/`, ProDOS, built `opt/`) via the kits' `.gitignore`.
 - Client Makefiles: `DEV` = `devkits/<kit>` if its `opt/` exists, otherwise `../../../<kit>`.
 - How-to: `docs/howto-devkits.md`; credits for every upstream project: README, "Thanks".

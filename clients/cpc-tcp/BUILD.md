@@ -19,17 +19,18 @@ xcode-select --install                 # compiler, make, git
 # Homebrew: https://brew.sh
 ```
 
-Tested on an Apple Silicon Mac with Homebrew (2026-11-14). The kit's scripts are written for macOS;
-on Linux the same tools build, but `tools/setup.sh` would need adapting (Homebrew, `sysctl`).
+Tested on an Apple Silicon Mac with Homebrew (2026-11-14). On Linux (Debian/Ubuntu; the kit tested on Ubuntu 26.04, 2026-11-15) use `tools/setup-linux.sh`
+instead, after installing its packages:
+`sudo apt install build-essential git cmake ninja-build libsdl2-dev libgl-dev sdcc`.
 
 ## 2. Build the CPC kit (once)
 
 ```sh
 cd devkits/development-kit-cpc-and-m4              # from the root of this repository
-tools/setup.sh
+tools/setup-macos.sh                   # Linux: tools/setup-linux.sh
 ```
 
-`setup.sh` installs `cmake ninja sdl2 sdcc` with Homebrew and builds into the kit's `opt/` (sources
+`setup-macos.sh` installs `cmake ninja sdl2 sdcc` with Homebrew and builds into the kit's `opt/` (sources
 in `src/`, logs in `build/logs/`):
 
 | Part | From | Used for |
@@ -44,7 +45,7 @@ keyboard through the CPC firmware), `lib/m4` (the M4 library: sockets, DNS, HTTP
 Duke's documented command interface, [m4info.txt](http://www.spinpoint.org/cpc/m4info.txt)) and
 `tools/cpcbin.py` (`.ihx` -> binary with AMSDOS header).
 
-Single parts can be rebuilt: `tools/setup.sh rasm idsk cpcse`.
+Single parts can be rebuilt: `tools/setup-macos.sh rasm idsk cpcse` (Linux: `tools/setup-linux.sh`, same names).
 
 Check: `brew --prefix sdcc` works, `opt/idsk/iDSK` exists (for building); `opt/cpcse/cpcse` (for
 testing).
@@ -102,6 +103,7 @@ emulator stands still when its window is hidden, `shot` doesn't need one.
   for the server again on the next round.
 - **"NO M4 BOARD FOUND."** - the M4 ROM isn't present (emulator: M4 switched off; the kit's
   `make run` writes `m4=1` into the emulator's settings).
-- **`sdcc` not found:** `brew install sdcc` (the Makefile takes it from `brew --prefix sdcc`).
+- **`sdcc` not found:** `brew install sdcc` (on macOS the Makefile takes it from `brew --prefix sdcc`);
+  Linux: `sudo apt install sdcc` (taken from PATH).
 - **Timing:** the emulated M4 answers about ten times faster than real hardware - check steering on a
   real CPC + M4.

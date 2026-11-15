@@ -18,7 +18,7 @@ Step by step, from an empty Mac to a running client, with checks and troubleshoo
 **[BUILD.md](BUILD.md)**. In short:
 
 Needs the C64 development kit (cc65, fujinet-lib >= 5.1.1, VICE with the FujiNet bridge): `devkits/development-kit-c64-and-fujinet` in this repo once its
-`tools/setup.sh` has run, otherwise a checkout of the kit next to this repository. See
+setup script (`tools/setup-macos.sh` / `tools/setup-linux.sh`) has run, otherwise a checkout of the kit next to this repository. See
 `docs/howto-devkits.md`.
 
 ```sh
