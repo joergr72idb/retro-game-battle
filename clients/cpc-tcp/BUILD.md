@@ -49,7 +49,8 @@ Duke's documented command interface, [m4info.txt](http://www.spinpoint.org/cpc/m
 
 **fujinet-network-cpc:** in this repo at `lib/fujinet-network-cpc` (a git subtree of its own
 repository, https://github.com/joergr72idb/fujinet-network-cpc; `make FNCPC=/path/to/fujinet-network-cpc` for another checkout). Nothing to build
-there - the client's Makefile compiles its one source file.
+there - the client's Makefile compiles its one source file, with `-DFN_NO_HTTP`: the client only
+needs TCP, so the library's HTTP part is left out (2.9 KB smaller).
 
 Single parts can be rebuilt: `tools/setup-macos.sh rasm idsk cpcse` (Linux: `tools/setup-linux.sh`, same names).
 

@@ -25,8 +25,9 @@ SERVER  ?= 127.0.0.1
 PORT    ?= 6502
 NAME    ?= SCHNEIDERCPC
 
+# -DFN_NO_HTTP: the client only needs TCP - fujinet-network-cpc without HTTP (2.9 KB smaller)
 CFLAGS  := -mz80 --opt-code-size -I $(DEV)/lib/cpc -I $(DEV)/lib/m4 -I $(FNCPC)/include \
-           -I . -I ../common \
+           -I . -I ../common -DFN_NO_HTTP \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
 LDFLAGS := -mz80 --no-std-crt0 --code-loc 0x4010 --data-loc 0
 OBJ     := build
@@ -51,7 +52,7 @@ $(OBJ)/cpc.rel: $(DEV)/lib/cpc/cpc.c | $(OBJ)
 $(OBJ)/m4.rel: $(DEV)/lib/m4/m4.c | $(OBJ)
 	$(SDCC) $(CFLAGS) -c -o $@ $<
 
-$(OBJ)/fujinet-network.rel: $(FNCPC)/src/fujinet-network.c $(FNCPC)/include/fujinet-network.h | $(OBJ)
+$(OBJ)/fujinet-network.rel: $(FNCPC)/src/fujinet-network.c $(FNCPC)/include/fujinet-network.h Makefile | $(OBJ)
 	$(SDCC) $(CFLAGS) -c -o $@ $<
 
 HDR     := platform.h ../common/rgb_platform.h $(FNCPC)/include/fujinet-network.h

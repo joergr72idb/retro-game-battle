@@ -231,7 +231,8 @@ any client in the future.
   sets `PLAT_PETSCII`), interface `clients/common/rgb_platform.h`. Builds: Atari 4, C64 3, CPC 3, Apple II 3.
 - The core uses fujinet-lib's network calls everywhere. The CPC gets them from
   `lib/fujinet-network-cpc` (git subtree of its own public repo https://github.com/joergr72idb/fujinet-network-cpc, GPL-3, same
-  API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Update:
+  API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Built with `-DFN_NO_HTTP`
+  (TCP only; with HTTP RGBTCP.BIN would be 11.9 instead of 9.1 KB). Update:
   `git subtree pull --prefix=lib/fujinet-network-cpc <repo> main --squash`.
 - Licence: GPL-3.0-or-later since 2026-11-15 (was MIT; the Atari/C64/Apple II binaries link
   fujinet-lib, which is GPL-3) - reason in the README. `devkits/` stay MIT (own LICENSE each),
