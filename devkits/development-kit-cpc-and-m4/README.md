@@ -38,7 +38,9 @@ Linux needs these packages first (`setup-linux.sh` lists the missing ones and st
 make                           # samples -> build/ and the SD card m4sd/, plus build/samples.dsk
 make www                       # test web server for the network samples (127.0.0.1:8765, samples/www)
 make run                       # emulator window, CPC 6128 with M4 (starts the test server too)
-make shot CMD='RUN"HELLOC"'    # headless run, screenshot -> build/shot.png (FRAMES=600 by default)
+make shot CMD='RUN"HELLOC"'    # run without a visible window, screenshot -> build/shot.png (FRAMES=600)
+make shot CMD='RUN"HELLOC"' KEYS='wait 300; key SPACE; type PRINT 6*7\n'
+make fastshot CMD='RUN"HELLOC"'   # the emulator's own headless mode: faster than real time, no KEYS
 make stop                      # stops the test web server
 make fujinet                   # optional: build/FNHELLO.BIN with fujinet-network-cpc, onto the SD card
 ```
@@ -54,6 +56,16 @@ RUN"FNHELLO"                             C with fujinet-network (after make fuji
 
 `RUN` of a binary resets the firmware: the CPC restarts when the program ends. To return to
 BASIC, reserve the memory and `CALL` it: `MEMORY &3FFF:LOAD"NAME":CALL &4000`.
+
+`make shot` is for checking a program without watching it (scripts, AI assistants): the emulator
+runs in real time with a hidden window and its command API on `127.0.0.1:API_PORT` (default 6128),
+`tools/cpcshot.py` types `CMD`, then `KEYS`, and after `FRAMES` frames (counted from `CMD`, 50 = 1 s)
+saves `build/shot.png`. `KEYS`: commands separated by `;` - `wait N` (frames), `type TEXT` (`\n` =
+ENTER), `key NAME` (RETURN SPACE ESC DEL COPY TAB UP DOWN LEFT RIGHT F0-F9, a letter or digit, or an
+emulator key code such as `ControlLeft`), `joy DIR [N]` (up, down, left, right, fire: taps of the
+cursor keys and Ctrl, which the emulator's joystick emulation turns into joystick 0). It needs a
+desktop session (the window is hidden, not absent). `make fastshot` uses the emulator's own `--shot`
+mode instead: no window at all, but as fast as it can, so a network program sees other timing.
 
 ## The M4 library (`lib/m4/m4.h`)
 

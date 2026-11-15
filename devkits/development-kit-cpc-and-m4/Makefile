@@ -7,7 +7,11 @@
 #                     and copy them onto the emulated M4's SD card (m4sd/)
 #   make www          local test web server for the network samples (127.0.0.1:8765, samples/www)
 #   make run          the emulator in a window, M4 on, SD card = m4sd/ (then: RUN"HELLOC")
-#   make shot CMD='RUN"HELLOC"'   headless run, screenshot in build/shot.png (for tests)
+#   make shot CMD='RUN"HELLOC"' KEYS='wait 100; key SPACE'   run without a visible window in real time,
+#                     keys from KEYS (tools/cpcshot.py, the emulator's command API on API_PORT), FRAMES frames
+#                     after CMD (default 600 = 12 s), screenshot in build/shot.png (for tests)
+#   make fastshot CMD='RUN"HELLOC"'   the emulator's own headless mode: as fast as it can (not real
+#                     time - network timing differs), no KEYS, screenshot in build/shot.png
 #   make stop         stops the test web server
 #   make fujinet      optional: build/FNHELLO.BIN with fujinet-network-cpc (FujiNet's fujinet-lib
 #                     network API on the M4; fetch it first: tools/setup-linux.sh|setup-macos.sh fujinet)
@@ -37,7 +41,7 @@ CPCSE_ENV := CPCSE_HOME=$(DEV)/build/cpcse-home
 
 OBJ       := build/obj
 
-.PHONY: all sd www run shot stop clean fujinet fncheck
+.PHONY: all sd www run shot fastshot stop clean fujinet fncheck
 
 all: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/samples.dsk sd
 
@@ -117,8 +121,16 @@ build/cpcse-home/cpcse.ini: | $(OBJ)
 run: all www build/cpcse-home/cpcse.ini
 	cd $(CPCSE) && $(CPCSE_ENV) ./cpcse --roms $(CPCSE)/roms
 
-# headless: the shot mode finds its ROMs only in the current folder, hence the cd
-shot: all www | $(OBJ)
+# real time with a hidden window, driven through the emulator's command API (tools/cpcshot.py)
+KEYS      ?=
+API_PORT  ?= 6128
+shot: all www build/cpcse-home/cpcse.ini | $(OBJ)
+	rm -f build/shot.png
+	python3 -I tools/cpcshot.py $(API_PORT) $(FRAMES) '$(CMD)\n' '$(KEYS)' $(DEV)/build/shot.png -- \
+	  sh -c 'cd $(CPCSE) && exec env $(CPCSE_ENV) ./cpcse --roms $(CPCSE)/roms "$$@"' cpcse
+
+# headless and as fast as it can: the shot mode finds its ROMs only in the current folder, hence the cd
+fastshot: all www | $(OBJ)
 	cd $(CPCSE) && $(CPCSE_ENV) ./cpcse --shot $(DEV)/build/shot.bmp --model cpc6128 \
 	  --frames $(FRAMES) --m4 $(M4SD) --type '$(CMD)\n' > $(DEV)/build/logs/shot.log 2>&1
 	$(if $(filter Darwin,$(UNAME)),sips -s format png build/shot.bmp --out build/shot.png > /dev/null,python3 -I tools/bmp2png.py build/shot.bmp build/shot.png)

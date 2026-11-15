@@ -7,8 +7,15 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   CPCSyntaxError is pinned (`CPCSE_TAG`): it changes almost daily - update on purpose and retest.
 - The emulator stores its settings next to the program unless `CPCSE_HOME` is set: always run it with
   `CPCSE_HOME=build/cpcse-home` (the Makefile does).
-- Headless `--shot` ignores `--roms` and looks for `roms/` in the current folder: run it from `opt/cpcse`
-  with absolute paths (`make shot`). Check results by reading `build/shot.png` (macOS converts with `sips`,
+- `make shot` (since 2026-11-16) = real time: `CPCSE_HIDDEN_WINDOW=1` + `--api=API_PORT` (6128), driven by
+  tools/cpcshot.py (JSON lines: `type` with wait=1, `key` = 4 frames down/4 up, `frames N`, `screenshot`, `quit`).
+  Cursor keys/Ctrl reach the program as joystick 0 (joystick emulation on in cpcse.ini). Tested with HELLOC, a
+  restart + `PRINT 6*7`, and RGB's CPC client vs server + bot (moves arrived). The old headless `--shot` run is
+  `make fastshot`: it runs unthrottled (~2x real time), which broke a network match timed in frames.
+- Never run `cpcse` without `CPCSE_HOME` (it writes settings next to the program); `cpcse --help` is no option -
+  it starts the GUI. Options are in src/gui/main.cpp, the API in docs/external-debugging.md.
+- Headless `--shot` (`make fastshot`) ignores `--roms` and looks for `roms/` in the current folder: run it from
+  `opt/cpcse` with absolute paths. Check results by reading `build/shot.png` (macOS converts with `sips`,
   Linux with `tools/bmp2png.py`). Typing (`--type`) needs ~600 frames before the result is on screen;
   fewer and the text never appears.
 - Don't put `\` before `&` in `CMD` - it reaches the CPC literally.
@@ -23,5 +30,5 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   arrived - a quick way to verify network code without the screen.
 - Optional fujinet-network-cpc (GPL-3, our own repo): setup part `fujinet` clones it at `FNCPC_REV` into
   `src/fujinet-network-cpc` (not in the default run - the kit stays MIT); `make fujinet` builds
-  samples/fnhello.c -> FNHELLO.BIN. Test: `make shot CMD='RUN"FNHELLO"' FRAMES=1200`, then `make stop`
+  samples/fnhello.c -> FNHELLO.BIN. Test: `make shot CMD='RUN"FNHELLO"' FRAMES=600`, then `make stop`
   (two GET /hello.txt in www.log). Bump `FNCPC_REV` in both setup scripts together.
