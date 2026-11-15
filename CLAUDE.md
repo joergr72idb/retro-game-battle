@@ -236,4 +236,10 @@ any client in the future.
   link fujinet-lib, which is GPL-3), with the reason in the README.
 - Tested: CPC in the headless emulator against the server (port 6602) and a bot (Tron, Artillery),
   and against a fake server that logs the CPC's lines (HELLO, GAME, MOVE U/L, FIRE x3, BYE).
-  Atari, C64, Apple II: built only - their emulators need a window and keys typed by hand.
+  Atari (build 4): played by the user in atari800 + FujiNet-PC against the CPC client (2026-11-15).
+  C64, Apple II: built only so far.
+- **Atari `make run` vs the Blues BBS:** both use NetSIO 9997 and web port 8000. With the BBS
+  running, the kit's FujiNet-PC attaches to the BBS's atari800 (and the client's atari800 gets no
+  FujiNet: self test); with the BBS's atari800 stopped, its run-fujinet loop restarts its FujiNet-PC,
+  which then attaches to the kit's atari800 (two FujiNets: black screen). Stop the BBS completely
+  (`blues-bbs/tools/inst.sh live stop`) before `make run`; own ports + a port check are planned.
