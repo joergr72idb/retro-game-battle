@@ -7,7 +7,7 @@ typed at the start). Build it yourself to change the default server or the code.
 
 - `RGBTCP.BIN` - the client (SDCC, Z80): a binary with an AMSDOS header, loaded and started at &4000.
   The network calls are the same as in the Atari, C64 and Apple II clients (fujinet-lib's
-  `network_open`, `network_status`, ...): [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc)
+  `network_open`, `network_status`, ...): [fujinet-network-cpc](../../lib/fujinet-network-cpc)
   provides them on the M4, on top of the kit's M4 library `lib/m4`.
 - `rgbtcp.dsk` - a disc image with `RGBTCP.BIN` (made with iDSK)
 
@@ -47,10 +47,9 @@ keyboard through the CPC firmware), `lib/m4` (the M4 library: sockets, DNS, HTTP
 Duke's documented command interface, [m4info.txt](http://www.spinpoint.org/cpc/m4info.txt)) and
 `tools/cpcbin.py` (`.ihx` -> binary with AMSDOS header).
 
-**fujinet-network-cpc:** a checkout next to this repository
-(`git clone https://github.com/joergr72idb/fujinet-network-cpc` next to `retro-game-battle`), or
-`make FNCPC=/path/to/fujinet-network-cpc`. Nothing to build there - the client's Makefile compiles
-its one source file.
+**fujinet-network-cpc:** in this repo at `lib/fujinet-network-cpc` (a git subtree of its own
+repository; `make FNCPC=/path/to/fujinet-network-cpc` for another checkout). Nothing to build
+there - the client's Makefile compiles its one source file.
 
 Single parts can be rebuilt: `tools/setup-macos.sh rasm idsk cpcse` (Linux: `tools/setup-linux.sh`, same names).
 

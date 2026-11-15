@@ -230,8 +230,9 @@ any client in the future.
   line reading). Each client keeps `platform.c`/`platform.h` (screen, keys, joystick, texts; the C64
   sets `PLAT_PETSCII`), interface `clients/common/rgb_platform.h`. Builds: Atari 4, C64 3, CPC 3, Apple II 3.
 - The core uses fujinet-lib's network calls everywhere. The CPC gets them from
-  `../fujinet-network-cpc` (own repo, GPL-3, same API on the M4; `make FNCPC=`) instead of calling
-  `lib/m4` directly.
+  `lib/fujinet-network-cpc` (git subtree of its own repo, GPL-3, same
+  API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Update:
+  `git subtree pull --prefix=lib/fujinet-network-cpc <repo> main --squash`.
 - Planned with the user: once this works, the repo moves to GPL-3 (the Atari/C64/Apple II binaries
   link fujinet-lib, which is GPL-3), with the reason in the README.
 - Tested: CPC in the headless emulator against the server (port 6602) and a bot (Tron, Artillery),

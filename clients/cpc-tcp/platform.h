@@ -1,7 +1,7 @@
 /* Retro Game Battle - Schneider/Amstrad CPC client (M4 board): the platform part.
  * The network calls are the same as on the FujiNet machines: fujinet-network-cpc provides
  * fujinet-lib's network functions on the M4. Built with SDCC, the CPC kit and
- * fujinet-network-cpc, see Makefile. The shared part is ../common/rgb_core.c.
+ * fujinet-network-cpc (../../lib/fujinet-network-cpc), see Makefile. The shared part is ../common/rgb_core.c.
  */
 #define BUILD           "3"
 #define PLAT_ID         "CPC"

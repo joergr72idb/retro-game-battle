@@ -1,7 +1,7 @@
 # Schneider CPC client over raw TCP (M4 board), C with SDCC - uses the CPC development kit
 # (../../../development-kit-cpc-and-m4: SDCC, lib/cpc, lib/m4, tools/cpcbin.py, iDSK) and
-# fujinet-network-cpc (../../../fujinet-network-cpc: fujinet-lib's network calls on the M4;
-# `make FNCPC=/path` for another place).
+# fujinet-network-cpc (../../lib/fujinet-network-cpc, a git subtree: fujinet-lib's network calls on
+# the M4; `make FNCPC=/path` for another checkout).
 #
 #   make                              RGBTCP.BIN for the server 127.0.0.1 (the emulator on this Mac)
 #   make SERVER=192.168.17.138        for a real CPC: the server's LAN address (the default;
@@ -15,8 +15,8 @@
 KIT     := development-kit-cpc-and-m4
 DEV     ?= $(abspath $(if $(wildcard ../../devkits/$(KIT)/opt),../../devkits/$(KIT),../../../$(KIT)))
 # SDCC: Homebrew's on macOS, the one on PATH (apt) on Linux - as in the kit
-# fujinet-network-cpc next to this repo
-FNCPC   ?= $(abspath ../../../fujinet-network-cpc)
+# fujinet-network-cpc: the copy in this repo (git subtree)
+FNCPC   ?= $(abspath ../../lib/fujinet-network-cpc)
 SDCC    := $(if $(filter Darwin,$(shell uname -s)),$(shell brew --prefix sdcc 2>/dev/null)/bin/sdcc,$(shell command -v sdcc 2>/dev/null))
 SDASZ80 := $(dir $(SDCC))sdasz80
 IDSK    := $(DEV)/opt/idsk/iDSK
