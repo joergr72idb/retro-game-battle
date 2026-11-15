@@ -147,6 +147,155 @@ static void t4(void)
     network_close(spec);
 }
 
+#ifndef FN_NO_HTTP
+/* ---- HTTP (the test server's HTTP port is SERVER_PORT + 2) ---- */
+
+static void hspec(const char *path)
+{
+    sprintf(spec, "N1:HTTP://%s:%u%s", SERVER_HOST, SERVER_PORT + 2, path);
+}
+
+/* reads the response body the usual way (status, read_nb) into buf, 0-terminated */
+static uint16_t body(uint8_t *err)
+{
+    uint16_t bw, n = 0;
+    uint8_t c;
+    int16_t r;
+
+    *err = 0;
+    for (;;) {
+        if (network_status(spec, &bw, &c, err) != FN_ERR_OK)
+            break;
+        if (!bw) {
+            if (!c)
+                break;
+            continue;
+        }
+        if (bw > sizeof buf - 1 - n)
+            bw = sizeof buf - 1 - n;
+        if (!bw || (r = network_read_nb(spec, buf + n, bw)) <= 0)
+            break;
+        n += r;
+    }
+    buf[n] = 0;
+    return n;
+}
+
+/* opens path with mode; for POST/PUT sends data (0 = nothing here); compares the body */
+static void http(const char *name, const char *path, uint8_t mode, const char *data,
+                 const char *want, uint8_t want_err)
+{
+    uint8_t err;
+    char d[60];
+
+    hspec(path);
+    if (network_open(spec, mode, OPEN_TRANS_NONE) != FN_ERR_OK) {
+        report(name, 0, "open");
+        return;
+    }
+    if (data && network_http_post(spec, data) != FN_ERR_OK) {
+        report(name, 0, "post");
+        network_close(spec);
+        return;
+    }
+    body(&err);
+    sprintf(d, "err=%u body=%.30s", err, (char *)buf);
+    report(name, !strcmp((char *)buf, want) && err == want_err, d);
+    network_close(spec);
+}
+
+static void http_tests(void)
+{
+    uint16_t i, n;
+    uint8_t err, ok;
+    int16_t r;
+    char d[60];
+
+    /* H1: 3000 bytes through the 256-byte buffer, a 400-byte header line dropped, then EOF */
+    hspec("/big");
+    network_open(spec, OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE);
+    for (ok = 1, n = 0;;) {             /* checked as it comes: more than buf holds */
+        uint16_t bw;
+        uint8_t c;
+
+        if (network_status(spec, &bw, &c, &err) != FN_ERR_OK)
+            break;
+        if (!bw) {
+            if (!c)
+                break;
+            continue;
+        }
+        r = network_read_nb(spec, buf, bw > 100 ? 100 : bw);
+        for (i = 0; i < (uint16_t)r; ++i, ++n)
+            if (buf[i] != pattern(n, 11))
+                ok = 0;
+    }
+    sprintf(d, "bytes=%u err=%u", n, err);
+    report("H1-get", ok && n == 3000 && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    /* H2: a request header; reading while adding headers is refused */
+    hspec("/hdr");
+    network_open(spec, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+    network_http_start_add_headers(spec);
+    r = network_read_nb(spec, buf, 10);
+    ok = r < 0 && fn_network_error == NETWORK_ERROR_WRITE_ONLY;
+    ok &= network_http_add_header(spec, "X-Test: cpc") == FN_ERR_OK;
+    ok &= network_http_add_header(spec, "no colon") == FN_ERR_BAD_CMD;
+    network_http_end_add_headers(spec);
+    body(&err);
+    sprintf(d, "r=%d err=%u body=%.20s", r, err, (char *)buf);
+    report("H2-header", ok && !strcmp((char *)buf, "X=cpc") && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    http("H3-404", "/missing", OPEN_MODE_HTTP_GET, 0, "nope", NETWORK_ERROR_FILE_NOT_FOUND);
+    http("H4-post", "/echo", OPEN_MODE_HTTP_POST, "hello world", "POST LEN=11:hello world",
+         NETWORK_ERROR_END_OF_FILE);
+
+    /* H5: POST data in pieces (channel mode), sent with the first status */
+    hspec("/echo");
+    network_open(spec, OPEN_MODE_HTTP_POST, OPEN_TRANS_NONE);
+    network_http_set_channel_mode(spec, HTTP_CHAN_MODE_POST_SET_DATA);
+    network_write(spec, "abc", 3);
+    network_write(spec, "def", 3);
+    network_http_set_channel_mode(spec, HTTP_CHAN_MODE_BODY);
+    body(&err);
+    sprintf(d, "err=%u body=%.30s", err, (char *)buf);
+    report("H5-post-data", !strcmp((char *)buf, "POST LEN=6:abcdef") && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    /* H6: 1000 bytes of binary POST data, more than the buffer: sent directly */
+    for (i = 0; i < 1000; ++i)
+        buf[i] = pattern(i, 13);
+    hspec("/echo");
+    network_open(spec, OPEN_MODE_HTTP_POST, OPEN_TRANS_NONE);
+    ok = network_http_post_bin(spec, buf, 1000) == FN_ERR_OK;
+    body(&err);
+    sprintf(d, "err=%u body=%.30s", err, (char *)buf);
+    report("H6-post-bin", ok && !strcmp((char *)buf, "POST LEN=1000:OK") && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    http("H7-put", "/echo", OPEN_MODE_HTTP_PUT_H, "xyz", "PUT LEN=3:xyz", NETWORK_ERROR_END_OF_FILE);
+
+    /* H8: DELETE the fujinet-lib way */
+    hspec("/item");
+    network_http_delete(spec, OPEN_TRANS_NONE);
+    body(&err);
+    sprintf(d, "err=%u body=%.20s", err, (char *)buf);
+    report("H8-delete", !strcmp((char *)buf, "DELETED") && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    http("H9-space", "/a b", OPEN_MODE_HTTP_GET, 0, "SPACE", NETWORK_ERROR_END_OF_FILE);
+
+    /* not supported: response headers */
+    hspec("/hdr");
+    network_open(spec, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+    sprintf(d, "e=%u", network_http_set_channel_mode(spec, HTTP_CHAN_MODE_COLLECT_HEADERS));
+    report("H-collect", fn_network_error == NETWORK_ERROR_NOT_IMPLEMENTED, d);
+    network_close(spec);
+}
+#endif
+
 static void expect(const char *name, const char *s, uint8_t mode, uint8_t trans, FN_ERR want, uint8_t code)
 {
     FN_ERR e = network_open(s, mode, trans);
@@ -185,7 +334,15 @@ int main(void)
            FN_ERR_IO_ERROR, NETWORK_ERROR_NETWORK_UNREACHABLE);
     expect("unit5", "N5:TCP://127.0.0.1:80/", OPEN_MODE_RW, OPEN_TRANS_NONE,
            FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-    expect("http", "N1:HTTP://127.0.0.1/", OPEN_MODE_READ, OPEN_TRANS_NONE,
+#ifndef FN_NO_HTTP
+    http_tests();
+#else
+    expect("no-http", "N1:HTTP://127.0.0.1/", OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE,
+           FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
+#endif
+    expect("https", "N1:HTTPS://127.0.0.1/", OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE,
+           FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
+    expect("http-put8", "N1:HTTP://127.0.0.1/", OPEN_MODE_HTTP_PUT, OPEN_TRANS_NONE,
            FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
     expect("no-port", "N1:TCP://127.0.0.1/", OPEN_MODE_RW, OPEN_TRANS_NONE,
            FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
