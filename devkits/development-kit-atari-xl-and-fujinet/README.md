@@ -55,8 +55,11 @@ Samples in `samples/`:
 - Start FujiNet-PC before the emulator (`make run` does that). Each emulated power-on reboots
   FujiNet-PC; `tools/run-fujinet` restarts it automatically.
 - **Ports:** web UI `127.0.0.1:8000`, NetSIO UDP 9997 (`WEB_PORT` / `NETSIO_PORT` in the Makefile).
-  The C64 kit uses 8001 and TCP 1541, so both kits run side by side. Other FujiNet-PCs with the same
-  ports (e.g. the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs)'s own instance: 8000 + 9997) can't run at the same time as this one.
+  The C64 kit uses 8001 and TCP 1541, so both kits run side by side. Another FujiNet-PC + atari800
+  on the same ports (e.g. the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs)'s own instance: 8000 + 9997)
+  would mix with this one: its FujiNet-PC joins our atari800 or ours joins its Atari. `make run`
+  therefore checks the ports first (`tools/check-ports`) and stops with the reason; then use other
+  ports: `make run NETSIO_PORT=9996 WEB_PORT=8002`.
 - The web UI has no login; it listens on 127.0.0.1 only, so it isn't reachable from the network.
 - **ROMs:** `atari800.cfg` uses the original Atari ROMs from `rom/` (not in git, copyrighted):
   `REV02.ROM` = 800XL OS rev. 2 (default), plus 400/800 rev. A PAL/B NTSC, 1200XL rev. 10,

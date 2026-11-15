@@ -6,6 +6,11 @@
 #   make run          FujiNet-PC + atari800 with build/hello-c.xex (other program: make run XEX=path)
 #   make run JOY=1    the same with joystick 0 on the cursor keys, fire = Space
 #   make stop         stop this kit's FujiNet-PC
+#   make run NETSIO_PORT=9996 WEB_PORT=8002   other ports, e.g. next to another FujiNet-PC + atari800
+#
+# Before starting, tools/check-ports refuses to run when the ports are in use: another atari800 on
+# NETSIO_PORT (our FujiNet-PC would join it), another FujiNet-PC set to NETSIO_PORT (it would join
+# our atari800 - two FujiNets on one bus, nothing boots) or another program on WEB_PORT.
 #
 # Other projects use the kit with  DEV ?= ../development-kit-atari-xl-and-fujinet  (see README).
 
@@ -48,6 +53,7 @@ NETSIO_PORT ?= 9997
 # FujiNet-PC: NetSIO (UDP) on NETSIO_PORT, web UI http://127.0.0.1:$(WEB_PORT) (local only), SD card = opt/fujinet-pc/SD
 # The [BOIP] port in fnconfig.ini is set from NETSIO_PORT on every start.
 fujinet: | build
+	@tools/check-ports $(WEB_PORT) $(NETSIO_PORT) $(FUJINET)
 	@$(SED_I) '/^\[BOIP\]/,/^\[/ s/^port=[0-9]*/port=$(NETSIO_PORT)/' $(FUJINET)/fnconfig.ini
 	@pgrep -f "$(FUJINET)/[f]ujinet" >/dev/null || \
 	  ( nohup $(DEV)/tools/run-fujinet -u http://127.0.0.1:$(WEB_PORT) >> $(DEV)/build/logs/fujinet.log 2>&1 & sleep 2 )
