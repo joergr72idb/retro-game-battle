@@ -8,6 +8,7 @@
 #   make test             builds FNTEST.BIN, starts test/testserver.py and runs FNTEST headless
 #                         in the kit's emulator; prints PASS or FAIL
 #   make fntest           only FNTEST.BIN + fntest.dsk (SERVER=, PORT= for a real CPC)
+#   NO_HTTP=1             with any of them: without HTTP (-DFN_NO_HTTP, about 3 KB smaller)
 #
 # Your program: -I include -I $(DEV)/lib/m4, link build/fujinet-network.rel build/m4.rel.
 
@@ -20,9 +21,10 @@ CPCSE   := $(DEV)/opt/cpcse
 
 SERVER  ?= 127.0.0.1
 PORT    ?= 6510
-FRAMES  ?= 2000
+FRAMES  ?= 5000
+NO_HTTP ?=
 
-CFLAGS  := -mz80 --opt-code-size -I include -I $(DEV)/lib/cpc -I $(DEV)/lib/m4
+CFLAGS  := -mz80 --opt-code-size -I include -I $(DEV)/lib/cpc -I $(DEV)/lib/m4 $(if $(NO_HTTP),-DFN_NO_HTTP)
 LDFLAGS := -mz80 --no-std-crt0 --code-loc 0x4010 --data-loc 0
 OBJ     := build
 
@@ -31,7 +33,7 @@ OBJ     := build
 all: lib
 lib: $(OBJ)/fujinet-network.rel $(OBJ)/m4.rel
 
-$(OBJ)/fujinet-network.rel: src/fujinet-network.c include/fujinet-network.h | $(OBJ)
+$(OBJ)/fujinet-network.rel: src/fujinet-network.c include/fujinet-network.h $(OBJ)/fntest.id | $(OBJ)
 	$(SDCC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ)/m4.rel: $(DEV)/lib/m4/m4.c | $(OBJ)
@@ -43,8 +45,9 @@ $(OBJ)/cpc.rel: $(DEV)/lib/cpc/cpc.c | $(OBJ)
 $(OBJ)/crt0.rel: $(DEV)/lib/cpc/crt0.s | $(OBJ)
 	$(SDASZ80) -o $@ $<
 
-# the server is compiled in: build/fntest.id changes (and fntest is rebuilt) when SERVER/PORT do
-TEST_ID := $(SERVER) $(PORT)
+# the server and NO_HTTP are compiled in: build/fntest.id changes (and the objects are rebuilt)
+# when SERVER/PORT/NO_HTTP do
+TEST_ID := $(SERVER) $(PORT) $(NO_HTTP)
 ifneq ($(shell cat $(OBJ)/fntest.id 2>/dev/null),$(TEST_ID))
 $(shell mkdir -p $(OBJ) && echo "$(TEST_ID)" > $(OBJ)/fntest.id)
 endif
