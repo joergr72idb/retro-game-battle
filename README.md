@@ -63,7 +63,8 @@ compatibility-filtering behavior with a `C64-WIC64` variant).
   and run each client in its emulator
 - `devkits/` - the four development kits themselves (build scripts, configs, our M4 library, samples)
 - `lib/fujinet-network-cpc/` - fujinet-lib's network calls (TCP) for the CPC + M4, so the CPC
-  client shares its code with the FujiNet clients (a git subtree of its own repository)
+  client shares its code with the FujiNet clients (a git subtree of its own repository,
+  [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc))
 - `docs/pap_diagrams.pdf` - PAP flowcharts for explaining the games to
   visitors (page 1) and the server logic (page 2); regenerate with
   `docs/pap_src/build.sh` from the `.dot` sources there
@@ -162,7 +163,8 @@ With their own licence files:
 
 - `devkits/` - the development kits are MIT (each kit's `LICENSE`): they are projects of their own
   and are used for other programs too;
-- `lib/fujinet-network-cpc/` - GPL-3.0-or-later (its `LICENSE`), a copy of its own repository.
+- `lib/fujinet-network-cpc/` - GPL-3.0-or-later (its `LICENSE`), a copy of its own repository
+  [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc).
 
 Not covered, because not ours:
 

@@ -48,7 +48,7 @@ Duke's documented command interface, [m4info.txt](http://www.spinpoint.org/cpc/m
 `tools/cpcbin.py` (`.ihx` -> binary with AMSDOS header).
 
 **fujinet-network-cpc:** in this repo at `lib/fujinet-network-cpc` (a git subtree of its own
-repository; `make FNCPC=/path/to/fujinet-network-cpc` for another checkout). Nothing to build
+repository, https://github.com/joergr72idb/fujinet-network-cpc; `make FNCPC=/path/to/fujinet-network-cpc` for another checkout). Nothing to build
 there - the client's Makefile compiles its one source file.
 
 Single parts can be rebuilt: `tools/setup-macos.sh rasm idsk cpcse` (Linux: `tools/setup-linux.sh`, same names).
