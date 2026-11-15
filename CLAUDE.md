@@ -2,7 +2,7 @@
 
 Toolchain only - real programs live in their own project folders and point `DEV` here.
 
-- `tools/setup.sh` builds everything into `opt/`. ProDOS comes from GitHub raw
+- `tools/setup-macos.sh` / `tools/setup-linux.sh` build everything into `opt/` (keep their pinned versions in step). ProDOS comes from GitHub raw
   (ProDOS-8/ProDOS8-Releases): `releases.prodos8.com` has a certificate for *.github.io only -
   don't switch certificate checks off for it. ProDOS has no licence statement: never commit it or a
   disk image containing it.
