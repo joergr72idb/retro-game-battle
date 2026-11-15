@@ -59,7 +59,9 @@ Samples in `samples/`:
   on the same ports (e.g. the [Berlin Blues BBS](https://github.com/joergr72idb/atari-fujinet-berlin-blues-bbs)'s own instance: 8000 + 9997)
   would mix with this one: its FujiNet-PC joins our atari800 or ours joins its Atari. `make run`
   therefore checks the ports first (`tools/check-ports`) and stops with the reason; then use other
-  ports: `make run NETSIO_PORT=9996 WEB_PORT=8002`.
+  ports: `make run NETSIO_PORT=9996 WEB_PORT=8002`. Tested next to the running BBS (2026-11-15):
+  the plain `make run` refused, the one with the other ports ran side by side with it, and the BBS
+  went on undisturbed.
 - The web UI has no login; it listens on 127.0.0.1 only, so it isn't reachable from the network.
 - **ROMs:** `atari800.cfg` uses the original Atari ROMs from `rom/` (not in git, copyrighted):
   `REV02.ROM` = 800XL OS rev. 2 (default), plus 400/800 rev. A PAL/B NTSC, 1200XL rev. 10,
