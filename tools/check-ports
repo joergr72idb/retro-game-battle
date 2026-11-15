@@ -1,0 +1,72 @@
+#!/bin/sh
+# Checks that this kit's FujiNet-PC and atari800 can start without meeting another instance:
+#   check-ports WEB_PORT NETSIO_PORT FUJINET_DIR
+# Fails (exit 1, with the reason) when
+#   - another program listens on WEB_PORT (FujiNet-PC's web UI),
+#   - something holds UDP NETSIO_PORT: another atari800 - our FujiNet-PC would join that Atari,
+#   - another FujiNet-PC is set to NETSIO_PORT: it would join our atari800 (two FujiNets on one
+#     bus: the Atari boots nothing). A FujiNet-PC of another project restarts itself after its
+#     Atari stops (tools/run-fujinet), so stopping only that Atari is not enough.
+# This kit's own FujiNet-PC (FUJINET_DIR/fujinet) is allowed. Linux and macOS (ss or lsof, ps).
+WEB=$1 NETSIO=$2 OWN=$3
+[ -n "$WEB" ] && [ -n "$NETSIO" ] && [ -n "$OWN" ] || { echo "usage: $0 WEB_PORT NETSIO_PORT FUJINET_DIR" >&2; exit 2; }
+
+listeners() {   # $1 = tcp|udp, $2 = port: pids with a socket bound to that local port
+    if command -v ss >/dev/null 2>&1; then      # Linux
+        if [ "$1" = tcp ]; then ss -ltnpH "sport = :$2" 2>/dev/null
+        else ss -lunpH "sport = :$2" 2>/dev/null; fi | grep -o 'pid=[0-9]*' | cut -d= -f2
+    elif [ "$1" = tcp ]; then                   # macOS
+        lsof -nP -t -iTCP:"$2" -sTCP:LISTEN 2>/dev/null
+    else    # lsof also lists sockets connected TO the port: keep those whose own side is it
+        lsof -nP -iUDP:"$2" -Fpn 2>/dev/null | awk -v p=":$2" '
+            /^p/ { pid = substr($0, 2) }
+            /^n/ { n = substr($0, 2); sub(/->.*/, "", n); if (substr(n, length(n) - length(p) + 1) == p) print pid }'
+    fi | sort -u
+}
+
+args() { ps -o args= -p "$1" 2>/dev/null; }
+
+cwd() {
+    if [ -d /proc/"$1" ]; then readlink /proc/"$1"/cwd
+    else lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p'; fi
+}
+
+is_own() { case "$(args "$1")" in "$OWN/fujinet"*) return 0 ;; esac; return 1; }
+
+fail=0
+for pid in $(listeners tcp "$WEB"); do
+    is_own "$pid" && continue
+    echo "check-ports: web port $WEB is taken by pid $pid: $(args "$pid")" >&2
+    fail=1
+done
+for pid in $(listeners udp "$NETSIO"); do
+    echo "check-ports: NetSIO port $NETSIO is held by pid $pid: $(args "$pid")" >&2
+    echo "             (an Atari emulator is running there - our FujiNet-PC would join it)" >&2
+    fail=1
+done
+
+# other FujiNet-PCs and the NetSIO port in their fnconfig.ini (empty = 9997)
+ps -A -o pid=,args= | while read -r pid cmd; do
+    case "$cmd" in
+        */run-fujinet*|*check-ports*) continue ;;
+        "$OWN/fujinet"*) continue ;;
+        fujinet*|./fujinet*|*/fujinet|*/fujinet\ *) ;;
+        *) continue ;;
+    esac
+    bin=${cmd%% *}
+    case "$bin" in /*) dir=$(dirname "$bin") ;; *) dir=$(cd "$(cwd "$pid")" 2>/dev/null && cd "$(dirname "$bin")" && pwd) ;; esac
+    port=$(sed -n '/^\[BOIP\]/,/^\[/ s/^port=\([0-9]*\).*/\1/p' "$dir/fnconfig.ini" 2>/dev/null | head -1)
+    [ -n "$port" ] || port=9997
+    if [ "$port" = "$NETSIO" ]; then
+        echo "check-ports: another FujiNet-PC (pid $pid, $dir) uses NetSIO port $NETSIO" >&2
+        echo "             (it would join our atari800 - stop it, with its restart loop)" >&2
+        exit 1
+    fi
+done || fail=1
+
+if [ $fail -ne 0 ]; then
+    echo "check-ports: stop the other instance, or use other ports:" >&2
+    echo "             make run NETSIO_PORT=9996 WEB_PORT=8002" >&2
+    exit 1
+fi
+exit 0
