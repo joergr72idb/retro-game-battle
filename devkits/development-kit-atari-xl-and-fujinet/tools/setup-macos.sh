@@ -11,7 +11,7 @@ JOBS="$(sysctl -n hw.ncpu)"
 # pinned versions (as tested 2026-11-14)
 CC65_REF=master                # cc65 has no recent releases; V2.19 from git
 FNLIB_TAG=v5.1.0
-ATARI800_TAG=ATARI800_7_2_1    # 7.x has NetSIO; Homebrew's atari800 does not
+ATARI800_TAG=98cc2dc            # master after 7.2.1 (NetSIO; -record-video for make shot); Homebrew's lacks NetSIO
 FASTBASIC_TAG=v4.8.1
 FUJINET_TAG=v1.6.1
 

@@ -8,7 +8,8 @@ Toolchain only - real programs live in their own project folders and point `DEV`
 - atari800 is built with `--disable-download`: otherwise a missing ROM makes it download PC Xformer ROMs into
   `rom/` next to the config and rewrite `atari800.cfg` - that happened once on 2026-11-14.
 - ROM paths in `atari800.cfg` are relative (`rom/...`): start atari800 from the kit folder (the Makefile does).
-- Homebrew's `atari800` has no NetSIO - always use `opt/atari800` (7.2.1 from source).
+- Homebrew's `atari800` has no NetSIO - always use `opt/atari800` (built from source, pinned to master 98cc2dc:
+  7.2.1 has no `-record-video`, and reads `-playback` files in another format than it writes them).
 - Start/stop FujiNet-PC only via `make fujinet` / `make stop` (or `tools/run-fujinet`): they match this kit's
   instance by its full path. Never `pkill -x fujinet` - that would also hit other projects' instances.
 - Ports: web UI 127.0.0.1:8000, NetSIO UDP 9997 (Makefile `WEB_PORT`/`NETSIO_PORT`; `make fujinet` writes the
@@ -28,3 +29,9 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   commands that reached FujiNet-PC (e.g. `GET ADAPTER CONFIG` from `samples/hello.c`).
 - FastBasic loops: `REPEAT ... UNTIL cond` or `DO ... LOOP` (endless, leave with `EXIT`) - no `LOOP UNTIL`.
 - ca65 programs: `cl65 -t atari -C atari-asm.cfg`, `.export start` - the cc65 library adds the XEX headers and RUNAD.
+- Check a program headless: `make shot [XEX=] [FRAMES=] [KEYS=]`, then read `build/shot.png` (and `grep -a 'Fuji cmd'
+  build/logs/fujinet.log`). KEYS -> `tools/keyscript.py` -> atari800 `-playback` file (one line per frame with keys,
+  ports, triggers, then a checksum line; "adler32 does not match" in build/logs/shot.log is normal). atari800 quits at
+  the file's end, `-record-video` writes build/shot.avi, ffmpeg takes the last frame. Next to the live BBS use
+  `NETSIO_PORT=9996 WEB_PORT=8002`. Tested 2026-11-15: hello-c, typed text with Shift, both joysticks, fire, START, CTRL.
+  Uppercase letters are typed with Shift (unshifted letters came out lowercase in cc65's cgetc).

@@ -6,6 +6,9 @@
 #   make run          FujiNet-PC + atari800 with build/hello-c.xex (other program: make run XEX=path)
 #   make run JOY=1    the same with joystick 0 on the cursor keys, fire = Space
 #   make stop         stop this kit's FujiNet-PC
+#   make shot         headless run (no window) of XEX for FRAMES frames (default 600 = 12 s PAL), keys and
+#                     joystick from KEYS (tools/keyscript.py), last frame -> build/shot.png, e.g.
+#                     make shot KEYS='wait 300; type HELLO; key RETURN; joy up+fire 20'
 #   make run NETSIO_PORT=9996 WEB_PORT=8002   other ports, e.g. next to another FujiNet-PC + atari800
 #
 # Before starting, tools/check-ports refuses to run when the ports are in use: another atari800 on
@@ -29,7 +32,7 @@ export CC65_HOME := $(DEV)/opt/cc65/share/cc65
 CFLAGS    := -t atari -O -I $(FNLIB) -g
 XEX       ?= build/hello-c.xex
 
-.PHONY: all run fujinet stop clean
+.PHONY: all run fujinet stop clean shot
 
 all: build/hello-c.xex build/hello-asm.xex build/hello-fb.xex
 
@@ -66,6 +69,26 @@ KBDJOY    := $(if $(filter 1,$(JOY)),-kbdjoy0 -no-kbdjoy1,-no-kbdjoy0 -no-kbdjoy
 run: $(XEX) fujinet
 	$(ATARI800) -config atari800.cfg $(KBDJOY) -xl -netsio $(NETSIO_PORT) -run $(XEX)
 
+# headless: no window or sound, input from a playback file (atari800 quits at its end), the screen
+# recorded as video and its last frame saved. A new atari800 never links to a FujiNet-PC that is
+# already running, so this kit's FujiNet-PC is restarted first (check-ports: not while an atari800
+# of `make run` uses NETSIO_PORT) and stopped afterwards; its log stays in build/logs/fujinet.log.
+FRAMES    ?= 600
+KEYS      ?=
+shot: $(XEX) | build
+	@command -v ffmpeg >/dev/null || { echo "make shot needs ffmpeg: sudo apt install ffmpeg (macOS: brew install ffmpeg)"; exit 1; }
+	@tools/check-ports $(WEB_PORT) $(NETSIO_PORT) $(FUJINET)
+	python3 -I tools/keyscript.py $(FRAMES) '$(KEYS)' > build/shot.playback
+	@$(MAKE) -s stop
+	@$(MAKE) -s fujinet
+	rm -f build/shot.avi build/shot.png
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $(ATARI800) -config atari800.cfg -no-kbdjoy0 -no-kbdjoy1 -xl \
+	  -netsio $(NETSIO_PORT) -playback build/shot.playback -record-video -vname build/shot.avi \
+	  -run $(XEX) > build/logs/shot.log 2>&1 < /dev/null || true
+	@$(MAKE) -s stop
+	ffmpeg -loglevel error -sseof -0.2 -i build/shot.avi -update 1 -frames:v 1 -y build/shot.png
+	@echo "screenshot: build/shot.png"
+
 # only this kit's instance (matched by its path), never other projects' FujiNet-PC
 # ([f]ujinet: the regex still matches the process, but not the recipe shell, whose command line holds the pattern)
 stop:
@@ -73,4 +96,4 @@ stop:
 	@pkill -f "$(FUJINET)/[f]ujinet" || true
 
 clean:
-	rm -f build/*.xex build/*.map build/*.lbl build/*.o
+	rm -f build/*.xex build/*.map build/*.lbl build/*.o build/shot.*

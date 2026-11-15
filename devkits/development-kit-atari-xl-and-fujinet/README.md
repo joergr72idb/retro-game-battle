@@ -9,7 +9,7 @@ this folder; nothing is installed system-wide except a few Homebrew or apt packa
 | [cc65](https://github.com/cc65/cc65) | V2.19 (git) | C compiler (`cl65`) and the **ca65** assembler |
 | [fujinet-lib](https://github.com/FujiNetWIFI/fujinet-lib) | 5.1.0 | C library for the FujiNet (network, SD card, clock, …) |
 | [FastBasic](https://github.com/dmsc/fastbasic) | 4.8.1 | Modern structured BASIC, cross-compiled to `.xex` |
-| [atari800](https://github.com/atari800/atari800) | 7.2.1 | Emulator with NetSIO (needed to talk to FujiNet-PC) |
+| [atari800](https://github.com/atari800/atari800) | master 98cc2dc (after 7.2.1) | Emulator with NetSIO (needed to talk to FujiNet-PC); the master commit adds `-record-video`, used by `make shot` |
 | [FujiNet-PC](https://github.com/FujiNetWIFI/fujinet-firmware) | 1.6.1 | The FujiNet firmware as a Mac/Linux program |
 
 ```
@@ -39,7 +39,22 @@ make run                       # FujiNet-PC + atari800 with the C sample
 make run XEX=build/hello-fb.xex
 make run JOY=1                 # with joystick 0 on the cursor keys, fire = Space
 make stop                      # stops this kit's FujiNet-PC
+make shot                      # headless run, no window: last frame -> build/shot.png (needs ffmpeg)
+make shot XEX=my.xex FRAMES=900 KEYS='wait 300; type Hello; key RETURN; joy up+fire 20'
 ```
+
+`make shot` is for checking a program without watching it (scripts, AI assistants): atari800 runs
+without a window for `FRAMES` frames (default 600 = 12 s PAL), presses the keys in `KEYS` at their
+frames, records the screen and saves the last frame as `build/shot.png`. What reached FujiNet-PC is
+in `build/logs/fujinet.log` (`grep -a 'Fuji cmd'`). It restarts this kit's FujiNet-PC first (a new
+atari800 never links to one that is already running) and stops it at the end.
+
+`KEYS` (`tools/keyscript.py`): commands separated by `;`, one after another from power-on -
+`wait N` (frames), `type TEXT`, `key NAME [N]` (RETURN SPACE ESC TAB BACKSPACE UP DOWN LEFT RIGHT
+HELP BREAK CAPS, a character, `CTRL-x`, `SHIFT-x`, START SELECT OPTION), `joy DIR [N]` / `joy1 DIR [N]`
+(up, down, left, right, upleft, ..., with `+fire`, or `fire`). It becomes an atari800 input playback
+file (`-playback`), so the timing counts emulated frames, not seconds. `ffmpeg` comes from apt or
+Homebrew (`sudo apt install ffmpeg` / `brew install ffmpeg`).
 
 Samples in `samples/`:
 - `hello.c` – C with fujinet-lib: asks the FujiNet for its version and IP address.
