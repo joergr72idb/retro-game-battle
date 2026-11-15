@@ -1,7 +1,7 @@
 #!/bin/sh
-# Builds the toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested.
-#   tools/setup.sh              build everything that is missing
-#   tools/setup.sh cpcse ...    (re)build only the named parts: rasm idsk cpcse
+# Builds the toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested (Linux: setup-linux.sh).
+#   tools/setup-macos.sh              build everything that is missing
+#   tools/setup-macos.sh cpcse ...    (re)build only the named parts: rasm idsk cpcse
 # SDCC comes from Homebrew (brew install sdcc).
 set -e
 
