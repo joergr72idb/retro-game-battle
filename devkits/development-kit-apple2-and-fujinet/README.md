@@ -1,6 +1,6 @@
 # Development Kit for the Apple II and FujiNet
 
-A self-contained toolchain on macOS for Apple II programs that use the FujiNet, tested in an emulator
+A self-contained toolchain for macOS and Linux for Apple II programs that use the FujiNet, tested in an emulator
 with FujiNet built in. Everything is built into `opt/` inside this folder.
 
 | Tool | Version | What it is |
@@ -14,9 +14,15 @@ with FujiNet built in. Everything is built into `opt/` inside this folder.
 ## Setup and use
 
 ```sh
-tools/setup.sh                       # Homebrew packages + everything missing into opt/
+tools/setup-macos.sh                 # macOS: Homebrew packages + everything missing into opt/
+tools/setup-linux.sh                 # Linux (Debian/Ubuntu): checks the apt packages, then the same
 make run DISK=path/to/disk.po        # put the disk on the emulated FujiNet's SD card, start the emulator
 ```
+
+Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
+`sudo apt install build-essential git cmake ninja-build python3 libsdl3-dev libboost-dev zlib1g-dev libgtk-4-dev libadwaita-1-dev gh unzip curl`
+
+On Linux the emulator is the GNOME frontend (`opt/fngo/fujinet-go-apple2-gnome`), on macOS the app.
 
 In CONFIG: host **SD** → the image → drive slot **1** → **ESC** boots it.
 
@@ -38,7 +44,7 @@ network calls - on the Apple II it finds the network device on the SmartPort.
 
 ## Built on the work of others
 
-This kit is only glue: a setup script that downloads and builds other people's software at fixed
+This kit is only glue: setup scripts that download and build other people's software at fixed
 versions, plus Makefiles and settings that wire it together. Everything that does the real work
 comes from these projects - used unmodified. **A warm thank you to all their maintainers and
 contributors!**
@@ -53,6 +59,6 @@ contributors!**
   with the [FujiNet firmware](https://github.com/FujiNetWIFI/fujinet-firmware) built in
 - the [FujiNet project](https://fujinet.online) as a whole - the hardware this kit is about
 
-**Underneath:** [Homebrew](https://github.com/Homebrew/brew), [SDL](https://github.com/libsdl-org/SDL),
+**Underneath:** [Homebrew](https://github.com/Homebrew/brew) or Debian/Ubuntu packages, [SDL](https://github.com/libsdl-org/SDL),
 [Boost](https://github.com/boostorg/boost), [CMake](https://github.com/Kitware/CMake) and
 [Ninja](https://github.com/ninja-build/ninja).

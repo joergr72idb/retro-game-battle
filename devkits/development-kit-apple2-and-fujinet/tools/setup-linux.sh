@@ -1,12 +1,12 @@
 #!/bin/sh
-# Builds the toolchain into opt/ (sources in src/). macOS with Homebrew, Apple Silicon tested.
-#   tools/setup.sh               build everything that is missing
-#   tools/setup.sh fngo ...      (re)build only the named parts: cc65 fujinet-lib cadius prodos fngo
+# Builds the toolchain into opt/ (sources in src/). Linux (Debian/Ubuntu with apt, Ubuntu 26.04 x86_64 tested; macOS: setup-macos.sh).
+#   tools/setup-linux.sh               build everything that is missing
+#   tools/setup-linux.sh fngo ...      (re)build only the named parts: cc65 fujinet-lib cadius prodos fngo
 set -e
 
 K="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$K/src"; OPT="$K/opt"; LOG="$K/build/logs"
-JOBS="$(sysctl -n hw.ncpu)"
+JOBS="$(nproc)"
 
 # pinned versions (as tested 2026-11-14)
 CC65_REF=master
@@ -16,6 +16,14 @@ FNGO_TAG=v0.10.0                # FujiNet Go Apple II (AppleWin core + FujiNet b
 PRODOS_URL=https://raw.githubusercontent.com/ProDOS-8/ProDOS8-Releases/HEAD/ProDOS_2_4_3.po
 
 mkdir -p "$SRC" "$OPT" "$LOG"
+# check the Debian/Ubuntu packages (no sudo from here - print the apt line and stop)
+apt_need() {
+    missing=""
+    for p in "$@"; do
+        dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'ok installed' || missing="$missing $p"
+    done
+    [ -z "$missing" ] || { echo "missing packages:$missing"; echo "  sudo apt install$missing"; exit 1; }
+}
 step() { echo "==> $1 (log: build/logs/$2.log)"; }
 
 clone() {  # clone <github repo> <dir> <ref>
@@ -26,7 +34,7 @@ clone() {  # clone <github repo> <dir> <ref>
 }
 
 prereqs() {
-    brew install cmake ninja sdl3 boost gh
+    apt_need build-essential git cmake ninja-build python3 libsdl3-dev libboost-dev zlib1g-dev libgtk-4-dev libadwaita-1-dev gh unzip curl
 }
 
 build_cc65() {
@@ -72,11 +80,11 @@ build_fngo() {
         git clone -q https://github.com/FujiNetWIFI/fujinet-go-apple2-desktop.git "$SRC/fujinet-go-apple2-desktop"
     git -C "$SRC/fujinet-go-apple2-desktop" fetch -q --tags
     git -C "$SRC/fujinet-go-apple2-desktop" checkout -q "$FNGO_TAG"
-    ( cd "$SRC/fujinet-go-apple2-desktop" && cmake -B "$K/build/fngo" -G Ninja -DFRONTEND=macos \
+    ( cd "$SRC/fujinet-go-apple2-desktop" && cmake -B "$K/build/fngo" -G Ninja -DFRONTEND=gnome \
         -DCMAKE_BUILD_TYPE=Release && cmake --build "$K/build/fngo" ) >"$LOG/fngo.log" 2>&1
     rm -rf "$OPT/fngo" && mkdir -p "$OPT/fngo"
-    cp -R "$K/build/fngo/frontends/macos/FujiNet Go Apple II.app" "$OPT/fngo/"
-    ls -d "$OPT/fngo/FujiNet Go Apple II.app"
+    cp "$K/build/fngo/frontends/gnome/fujinet-go-apple2-gnome" "$OPT/fngo/"
+    ls "$OPT/fngo/fujinet-go-apple2-gnome"
 }
 
 if [ $# -eq 0 ]; then
@@ -85,7 +93,7 @@ if [ $# -eq 0 ]; then
     ls "$OPT"/fujinet-lib/fujinet-apple2-*.lib >/dev/null 2>&1 || build_fujinet_lib
     [ -x "$OPT/cadius/cadius" ]                              || build_cadius
     [ -f "$OPT/prodos/PRODOS" ]                              || get_prodos
-    [ -d "$OPT/fngo/FujiNet Go Apple II.app" ]               || build_fngo
+    [ -x "$OPT/fngo/fujinet-go-apple2-gnome" ]               || build_fngo
 else
     for part in "$@"; do
         case "$part" in
