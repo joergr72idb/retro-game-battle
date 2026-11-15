@@ -2,7 +2,7 @@
  * Built with the C64 kit (cc65 + fujinet-lib >= 5.1.1), see Makefile. The shared part is
  * ../common/rgb_core.c; PLAT_PETSCII makes it convert lines between PETSCII and ASCII.
  */
-#define BUILD           "3"
+#define BUILD           "4"
 #define PLAT_ID         "C64"
 #define PLAT_TITLE      "C64 FUJINET - TCP BUILD " BUILD
 #define PLAT_CONTROLS   "USE JOYSTICK (PORT 2), FIRE = BUTTON OR SPACE"

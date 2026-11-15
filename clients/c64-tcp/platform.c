@@ -1,6 +1,7 @@
 /* Retro Game Battle - C64 client: screen, keyboard and joystick (see platform.h) */
 #include <conio.h>
 #include <cbm.h>
+#include <string.h>
 #include "rgb_platform.h"
 
 static unsigned char was_fire;
@@ -15,10 +16,43 @@ void plat_clear(void)
     clrscr();
 }
 
+/* cc65's conio does not scroll: past the last line the cursor wraps and the text lands in the
+   lines above (seen on the end screen, 2026-11-16). Scroll screen and colour RAM by hand. */
+#define SCREEN  ((unsigned char *)0x0400)
+#define COLOURS ((unsigned char *)0xD800)
+
+static void scroll_up(void)
+{
+    memmove(SCREEN, SCREEN + 40, 24 * 40);
+    memmove(COLOURS, COLOURS + 40, 24 * 40);
+    memset(SCREEN + 24 * 40, ' ', 40);
+    memset(COLOURS + 24 * 40, *(unsigned char *)0x0286, 40);   /* the current text colour */
+}
+
+static void next_line(void)
+{
+    if (wherey() >= 24) {
+        scroll_up();
+        gotoxy(0, 24);
+    } else
+        gotoxy(0, wherey() + 1);
+}
+
 void plat_putc(char c)
 {
-    if (c == '\n')
-        cputc('\r');
+    unsigned char x;
+
+    if (c == '\n') {
+        next_line();
+        return;
+    }
+    x = wherex();
+    if (x == 39 && wherey() >= 24) {    /* the last cell: print it, then scroll instead of wrapping */
+        cputc(c);
+        scroll_up();
+        gotoxy(0, 24);
+        return;
+    }
     cputc(c);
 }
 

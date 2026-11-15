@@ -228,7 +228,7 @@ any client in the future.
 
 - The four C clients share `clients/common/rgb_core.c` (protocol, server prompt, menu, MOVE/FIRE,
   line reading). Each client keeps `platform.c`/`platform.h` (screen, keys, joystick, texts; the C64
-  sets `PLAT_PETSCII`), interface `clients/common/rgb_platform.h`. Builds: Atari 4, C64 3, CPC 3, Apple II 3.
+  sets `PLAT_PETSCII`), interface `clients/common/rgb_platform.h`. Builds: Atari 4, C64 4, CPC 3, Apple II 3.
 - The core uses fujinet-lib's network calls everywhere. The CPC gets them from
   `lib/fujinet-network-cpc` (git subtree of its own public repo https://github.com/joergr72idb/fujinet-network-cpc, GPL-3, same
   API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Built with `-DFN_NO_HTTP`
@@ -251,3 +251,14 @@ any client in the future.
   FujiNet: self test); with the BBS's atari800 stopped, its run-fujinet loop restarts its FujiNet-PC,
   which then attaches to the kit's atari800 (two FujiNets: black screen). Stop the BBS completely
   (`blues-bbs/tools/inst.sh live stop`) before `make run`; own ports + a port check are planned.
+
+## Hands-free test, C64 end screen (2026-11-16)
+
+- All four C clients played a Tron match against a bot with nobody at the keyboard: server on 6602, the kits'
+  `make shot KEYS=...` (Atari on NetSIO 9996/web 8002 next to the BBS), menu RETURN/RETURN/1, joystick moves
+  arrived at the server for every client. The CPC needed the CPC kit's real-time `make shot` (its old
+  headless mode runs faster than real time).
+- **C64 build 4:** cc65's conio does not scroll, so on a full screen the end text ("PRESS A KEY TO PLAY
+  AGAIN") was written into the lines above. `plat_putc` now scrolls screen + colour RAM itself at the
+  bottom line. Checked in the hands-free run (end screen in order). `disk-images/c64/rgb.d64` rebuilt
+  (192.168.17.138:6502).
