@@ -37,3 +37,6 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   Tested: `make run NETIEC_PORT=1542 WEB_PORT=8003` works; afterwards fnconfig.ini keeps that port until the
   next `make fujinet`.
 - Start/stop FujiNet-PC only via `make fujinet` / `make stop`: they match this kit's instance by its full path.
+- macOS SIP strips `DYLD_*` when a program starts via `/usr/bin/python3` (or `/usr/bin/env`, `/bin/sh`): `make shot`
+  hands the bridge path to tools/c64shot.py as `BRIDGE_LIBPATH`/`BRIDGE_DIR`, which sets it for VICE. Symptom of a
+  missing bridge: "Real Device: Real device access is not available!" in build/shot.vice.log, "no fujinet found".

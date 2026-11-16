@@ -229,6 +229,8 @@ def main():
         probe.close()
 
     env = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+    if env.get("BRIDGE_LIBPATH") and env.get("BRIDGE_DIR"):    # where VICE finds the bridge (libopencbm)
+        env[env["BRIDGE_LIBPATH"]] = env["BRIDGE_DIR"]
     log = open(outp + ".vice.log", "w")
     proc = subprocess.Popen(vice + ["-binarymonitor", "-binarymonitoraddress",
                                     f"ip4://127.0.0.1:{port}", "-sounddev", "dummy"],
