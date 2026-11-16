@@ -5,6 +5,9 @@ and how to run each client in its emulator against a local server. Tested on an 
 with Homebrew, 2026-11-14. The steps below are the macOS ones; on Linux (Debian/Ubuntu, tested on
 Ubuntu 26.04, 2026-11-15) each kit has `tools/setup-linux.sh` instead, and its README lists the apt
 packages to install first (SDCC is then the apt one, 4.5.0).
+On Windows the kits should run in **WSL2** (Ubuntu 26.04) with the Linux steps - not tested yet;
+each kit's README has a section "Windows (WSL2)" (clone into `~/`, not `/mnt/c`; WSLg for the
+windows; mirrored networking for connections from real computers into WSL, e.g. to the game server).
 
 | Kit | Toolchain | Emulator + network | Client |
 |---|---|---|---|
