@@ -194,7 +194,7 @@ make
 | Homebrew | - | `brew install cmake ninja sdl2 sdcc` (SDCC 4.6.0 from Homebrew) |
 | RASM | `EdouardBERGE/rasm` tag `v3.3.3` | `make`, copy `rasm.exe` to `opt/rasm/rasm` |
 | iDSK | `cpcsdk/idsk` tag `v0.20` | `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build` |
-| CPCSyntaxError | `WacKEDmaN/CPCSyntaxError` tag `v0.16.0` | `cmake -S . -B build/cpcse -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build/cpcse`, copy `cpcse`, `cpcse-ctl`, `roms/`, `sounds/` |
+| CPCSyntaxError | `WacKEDmaN/CPCSyntaxError` tag `v0.16.0` | `cmake -S . -B build/cpcse -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build/cpcse`, copy `cpcse`, `cpcse-ctl`, `roms/`, `sounds/`; macOS: first `git apply tools/patches/cpcse-hidden-window-no-vsync.patch` (for `make shot`) |
 
 Not from upstream, but part of the kit repo: `lib/m4` (our C library for the M4 board: HTTP, DNS,
 TCP sockets, written from Duke's m4info.txt), `lib/cpc` (SDCC `crt0.s`, firmware printf/keyboard)
@@ -218,8 +218,8 @@ Pitfalls:
 - `RUN` of a binary resets the CPC when it ends; to return to BASIC use
   `MEMORY &3FFF:LOAD"NAME":CALL &4000`.
 - The emulated M4 answers ~10x faster than real hardware: check timing on a real CPC + M4.
-- Headless runs/screenshots: `make shot CMD='RUN"RGBTCP"'` (the emulator stalls when its
-  window is hidden).
+- Headless runs/screenshots: `make shot CMD='RUN"RGBTCP"'` (real time, hidden window; on macOS
+  only with the kit's no-vsync patch, which `setup-macos.sh` applies - without it the emulator stalls).
 
 ## 4. Apple II + FujiNet
 
