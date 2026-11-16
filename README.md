@@ -63,6 +63,32 @@ Size: HTTP costs about 2.9 KB. A program that only needs TCP compiles the librar
 the `network_http_*` functions are left out, so a program that uses them does not link.
 Retro Game Battle's CPC client `RGBTCP.BIN`: 11.9 KB with HTTP, 9.1 KB with `-DFN_NO_HTTP`.
 
+## Status (2026-11-16)
+
+Development is **paused**; it will be continued later. Issues and ideas are welcome meanwhile.
+
+**Done**
+- TCP client: open (host name or a.b.c.d), status, read (blocking and non-blocking), write, close,
+  units `N1:`-`N4:` - the calls Retro Game Battle's CPC client needs.
+- HTTP client (plain HTTP/1.0): GET, POST (text, in pieces, binary), PUT, DELETE, request headers,
+  HTTP errors as FujiNet error codes, body of an error response readable.
+- TCP-only build (`-DFN_NO_HTTP`, 2.9 KB smaller), used by Retro Game Battle.
+- Test program against a local test server (`make test`, both variants) - in the emulator.
+
+**Open** (roughly in the planned order)
+
+| | Note |
+|---|---|
+| Real CPC + M4 | everything so far runs only in the emulator (CPCSyntaxError with M4 emulation) |
+| Response headers | `HTTP_CHAN_MODE_COLLECT_HEADERS` / `_GET_HEADERS` - the headers arrive already, they are skipped |
+| Redirects | follow 3xx `Location` instead of returning error 144 |
+| `OPEN_MODE_HTTP_PUT` | PUT of everything written until close |
+| UDP | depends on what the M4 firmware offers - to be checked |
+| Listening (TCP server) | the same; needed for e.g. a BBS on the CPC |
+| TNFS | FujiNet's file protocol, runs over UDP - after UDP |
+| Translation modes, JSON | `OPEN_TRANS_*` other than NONE, FujiNet's JSON parser |
+| HTTPS | not possible on the M4 (no TLS) - only with FujiNet hardware (see the next goal) |
+
 ## Build and test
 
 Needs the CPC development kit next to this folder (its setup script run).
