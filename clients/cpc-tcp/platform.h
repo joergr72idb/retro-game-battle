@@ -3,7 +3,7 @@
  * fujinet-lib's network functions on the M4. Built with SDCC, the CPC kit and
  * fujinet-network-cpc (../../lib/fujinet-network-cpc), see Makefile. The shared part is ../common/rgb_core.c.
  */
-#define BUILD           "3"
+#define BUILD           "4"
 #define PLAT_ID         "CPC"
 #define PLAT_TITLE      "SCHNEIDER CPC - TCP BUILD " BUILD
 #define PLAT_CONTROLS   "USE JOYSTICK, FIRE = BUTTON OR SPACE"

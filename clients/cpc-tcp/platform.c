@@ -30,8 +30,34 @@ got:    ld      l, a
     __endasm;
 }
 
+/* KM SET TRANSLATE / SHIFT / CONTROL: key number tkey gives the character tchar in all three tables */
+static unsigned char tkey, tchar;
+static void km_translate(void) __naked
+{
+    __asm
+        ld      a, (_tchar)
+        ld      b, a
+        ld      a, (_tkey)
+        call    0xBB27
+        ld      a, (_tchar)
+        ld      b, a
+        ld      a, (_tkey)
+        call    0xBB2D
+        ld      a, (_tchar)
+        ld      b, a
+        ld      a, (_tkey)
+        jp      0xBB33
+    __endasm;
+}
+
 unsigned char plat_init(void)
 {
+    /* Joystick 0's fire buttons (key numbers 76, 77) type 'X' and 'Z' by default: after a match,
+       a player still on the stick started the next one and put an X into the PIN (hands-free
+       back-to-back test, 2026-11-16). Now they give codes no key has; plat_getkey() skips those
+       and the stick's directions (8-11), plat_input() still reads them. */
+    tkey = 76; tchar = 225; km_translate();
+    tkey = 77; tchar = 224; km_translate();
     return network_init() == FN_ERR_OK;
 }
 
@@ -61,8 +87,11 @@ void plat_cursor(unsigned char on)
 
 unsigned char plat_getkey(void)
 {
-    unsigned char k = cpc_getkey();
+    unsigned char k;
 
+    do                                  /* the keyboard only: skip joystick 0 (see plat_init) */
+        k = cpc_getkey();
+    while ((k >= 8 && k <= 11) || k == 224 || k == 225);
     return k == 127 ? RGB_KEY_DEL : k;  /* ENTER and RETURN are 13 already */
 }
 

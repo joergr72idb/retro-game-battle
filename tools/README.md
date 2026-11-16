@@ -25,3 +25,8 @@
   `build/handsfree/`. The Atari runs on NetSIO 9996/web 8002, so it works next to another
   FujiNet-PC + atari800 on the default ports. Afterwards the clients in `clients/*-tcp/` are built
   for the test server - run `make` there again before using them.
+  `tools/handsfree_test.sh --b2b [...]` ("back-to-back"): two matches in a row per client, both joined
+  as the second player (the bot is already waiting, so START follows GAME 1 at once), the second one
+  via "play again" right after the first match ends. PASS needs the connection order bot, client,
+  bot, client, two finished matches and moves from the client in the second one. First run
+  2026-11-16: Atari, C64, Apple II PASS; the CPC failed and was fixed (CPC client build 4).

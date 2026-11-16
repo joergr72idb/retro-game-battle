@@ -265,3 +265,18 @@ any client in the future.
 - The test is in the repo: `tools/handsfree_test.sh` (see tools/README.md). It runs the server through a small
   wrapper that sets `config.RESULTS_CSV_PATH`/`LOG_FILE_PATH` to `build/handsfree/` - test matches never reach the
   event's `game_results.csv`. First run 2026-11-16: all four PASS (moves 19/20/10/21).
+
+## Back-to-back joins, CPC build 4 (2026-11-16)
+
+- Open since Retro Tron Battle: a client joining while its opponent is **already waiting** (START comes
+  right after GAME, no WAIT) and playing again right after a match. Tested hands-free:
+  `tools/handsfree_test.sh --b2b` (two matches per client, the client second both times; the second bot
+  starts when the server log shows the first GAME END). Atari, C64, Apple II PASS at once.
+- **CPC bug found:** the firmware turns joystick 0 into keys (directions 8-11, fire 'X'/'Z'). A player
+  still moving the stick after GAME OVER answered "PRESS A KEY TO PLAY AGAIN" and typed X into the PIN -
+  the next match ran as `CPC/X` with PIN X (wrong player, wrong photo). **Build 4:** `plat_init()` maps the
+  fire keys (76/77) to 224/225 in all three translation tables, `plat_getkey()` skips 8-11/224/225 -
+  waiting for a key reads the keyboard only. Moves/FIRE in the match unchanged (fake-server log: MOVE U,
+  FIRE, MOVE L, FIRE, FIRE via Space). After the fix: `--b2b cpc` and the normal test PASS.
+  `disk-images/cpc/rgb.dsk` rebuilt (192.168.17.138:6502). Not yet on real hardware.
+
