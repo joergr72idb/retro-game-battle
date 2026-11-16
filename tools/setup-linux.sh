@@ -17,6 +17,19 @@ FUJINET_TAG=v1.6.1
 
 mkdir -p "$SRC" "$OPT" "$LOG"
 
+# Windows: WSL2 (not tested yet) - only hints, nothing is changed
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "==> WSL detected (Windows) - not tested yet, please report problems (see README, Windows)"
+    case "$K" in /mnt/*)
+        echo "    The kit is on a Windows drive ($K): that is slow and breaks file permissions."
+        echo "    Clone it into the Linux home (~/) instead. (WSL_MNT_OK=1 to try anyway)"
+        [ -n "${WSL_MNT_OK:-}" ] || exit 1 ;;
+    esac
+    [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] || \
+        echo "    No WSLg display: emulator windows will not open (wsl --update; make shot works without)."
+    echo "    Connections from other machines into WSL need networkingMode=mirrored (see README)."
+fi
+
 # check the Debian/Ubuntu packages (no sudo from here - print the apt line and stop)
 apt_need() {
     missing=""
