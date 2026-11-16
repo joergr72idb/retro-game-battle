@@ -32,6 +32,28 @@ with `PRODOS` and the ProDOS boot blocks, the first `*.SYSTEM` file starts by it
 `clients/apple2-tcp/Makefile` in [Retro Game Battle](https://github.com/joergr72idb/retro-game-battle)). Call `network_init()` before other fujinet-lib
 network calls - on the Apple II it finds the network device on the SmartPort.
 
+## Windows (WSL2) - not tested yet
+
+The kit should run on Windows inside **WSL2** (a real Linux within Windows) with the Linux setup
+above. Not tested yet - reports are welcome (GitHub issues).
+
+1. In PowerShell as administrator: `wsl --install -d Ubuntu-26.04` (the kit is tested on Ubuntu
+   26.04; older releases lack some packages), restart, create the Linux user.
+2. In the Ubuntu window: clone the kit into the Linux home (`~/`), **not** under `/mnt/c/...` -
+   that is slow and its file permissions break the build. Then follow the Linux steps above.
+3. Emulator windows and sound come through WSLg (Windows 11, or Windows 10 with a current WSL:
+   `wsl --update`). `make shot` needs no window.
+4. Network: emulator, FujiNet-PC and internet work as on Linux. Connections *into* WSL from other
+   machines on the LAN (e.g. a real computer to a server running in WSL) need mirrored networking -
+   `%UserProfile%\.wslconfig`:
+   ```
+   [wsl2]
+   networkingMode=mirrored
+   ```
+   then `wsl --shutdown`, and allow the port in the Windows firewall.
+
+`tools/setup-linux.sh` recognizes WSL and prints these hints (it stops when the kit is under `/mnt/`).
+
 ## Headless runs: `make shot`
 
 For checking a program without watching it (scripts, AI assistants): `make shot` runs the emulator
