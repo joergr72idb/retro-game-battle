@@ -34,10 +34,13 @@ XEX       ?= build/hello-c.xex
 
 .PHONY: all run fujinet stop clean shot
 
-all: build/hello-c.xex build/hello-asm.xex build/hello-fb.xex
+all: build/hello-c.xex build/hello-asm.xex build/hello-fb.xex build/demo.xex
 
 build/hello-c.xex: samples/hello.c | build
 	$(CL65) $(CFLAGS) -m build/hello-c.map -Ln build/hello-c.lbl -o $@ $< $(FNLIBA)
+
+build/demo.xex: samples/demo.c samples/demo.s samples/demo.cfg | build
+	$(CL65) $(CFLAGS) -C samples/demo.cfg -m build/demo.map -Ln build/demo.lbl -o $@ samples/demo.c samples/demo.s $(FNLIBA)
 
 build/hello-asm.xex: samples/hello.s | build
 	$(CL65) -t atari -C atari-asm.cfg -Ln build/hello-asm.lbl -o $@ $<
