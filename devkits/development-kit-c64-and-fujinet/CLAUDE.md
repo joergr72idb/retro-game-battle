@@ -17,7 +17,10 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   (tools/c64shot.py: x64sc with SDL dummy video/sound and `-binarymonitor` on MON_PORT 6520; keyboard feed 0x72,
   keymatrix 0x74, joystick 0xa3 - VICE holds them N frames itself; display 0x84 + palette 0x91; text screen found via
   $D018/$DD00). Timing is wall clock at 50 fps (VICE runs at real speed). Tested 2026-11-15: hello-c, text, F1, cursor,
-  matrix key, both joysticks + fire. cc65 programs switch to the lower case charset - the text dump follows $D018.
+  matrix key, both joysticks + fire. RESTORE (2026-11-16): NMI arrives (test program with its own $0318 vector
+  counted 3 of 3), `press RUNSTOP+RESTORE` gives the warm start - in a `+` combination the keys go down 2 frames
+  apart (RUN/STOP first: the KERNAL sees it only at its next keyboard scan) and come up together.
+  cc65 programs switch to the lower case charset - the text dump follows $D018.
 - By hand: start x64sc with `-remotemonitor`, then
   `printf 'm 0400 07e7\n' | nc -w 2 127.0.0.1 6510 > build/logs/screen.txt; tools/screen.py build/logs/screen.txt`.
   `grep -a 'Fuji cmd' build/logs/fujinet.log` lists commands that reached FujiNet-PC (`-a`: the log can contain NULs).

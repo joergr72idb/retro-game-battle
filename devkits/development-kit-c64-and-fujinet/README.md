@@ -53,7 +53,8 @@ written. FujiNet-PC is started as for `make run` and keeps running (`make stop`)
 `KEYS` (`tools/c64shot.py`): commands separated by `;` - `wait N` (frames), `type TEXT` (through the
 keyboard buffer, as BASIC and cc65's `cgetc` read it; upper case letters come out shifted), `key NAME`
 (RETURN DEL HOME CLR UP DOWN LEFT RIGHT F1-F8 RUNSTOP SPACE or a character, also through the buffer),
-`press NAME [N]` (held in the keyboard matrix, for programs that scan it themselves; also RESTORE),
+`press NAME [N]` (held in the keyboard matrix, for programs that scan it themselves; also RESTORE;
+several keys at once with `+`, e.g. `press RUNSTOP+RESTORE` or `press LSHIFT+X`),
 `joy DIR [N]` / `joy1 DIR [N]` (port 2 / port 1: up, down, left, right, upleft, ..., with `+fire`, or
 `fire`). As on a real C64, joystick 1 also shows up as key presses.
 
