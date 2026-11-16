@@ -14,7 +14,9 @@ by the clock, as VICE runs at real speed):
                          F1..F8 RUNSTOP SPACE, or a character
     press NAME [N]       one key held in the keyboard matrix for N frames (default 3), for programs
                          that scan the keyboard themselves: a letter or digit, SPACE RETURN DEL
-                         RUNSTOP F1 F3 F5 F7 DOWN RIGHT CTRL CBM LSHIFT RSHIFT HOME, or RESTORE
+                         RUNSTOP F1 F3 F5 F7 DOWN RIGHT CTRL CBM LSHIFT RSHIFT HOME, or RESTORE;
+                         several at once with '+' (pressed in that order 2 frames apart, released
+                         together): press RUNSTOP+RESTORE, press LSHIFT+X
     joy DIR [N]          joystick in port 2 for N frames (default 10): up down left right upleft ...,
                          any of them +fire, or fire alone
     joy1 DIR [N]         the same in port 1
@@ -90,12 +92,15 @@ def parse(script, total):
             out.append((t, "feed", data))
             t += 3
         elif word == "press":
-            name = parts[0].upper()
+            # A+B+...: pressed in this order 2 frames apart, released together - the KERNAL sees
+            # RUN/STOP only at its next keyboard scan, so RUNSTOP+RESTORE needs RUN/STOP down first
+            names = [parts[0].upper()] if parts[0] == "+" else parts[0].upper().split("+")
             n = int(parts[1]) if len(parts) > 1 else 3
-            if name != "RESTORE" and name not in MATRIX:
-                sys.exit(f"c64shot: unknown matrix key {parts[0]!r}")
-            out.append((t, "matrix", (name, n)))
-            t += n + 3
+            for i, name in enumerate(names):
+                if name != "RESTORE" and name not in MATRIX:
+                    sys.exit(f"c64shot: unknown matrix key {name!r}")
+                out.append((t + 2 * i, "matrix", (name, n + 2 * (len(names) - 1 - i))))
+            t += n + 2 * (len(names) - 1) + 3
         elif word in ("joy", "joy1"):
             n = int(parts[1]) if len(parts) > 1 else 10
             d = parts[0].lower()
