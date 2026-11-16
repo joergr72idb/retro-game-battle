@@ -58,6 +58,9 @@ get_fujinet() {
 build_cpcse() {
     step CPCSyntaxError cpcse
     clone WacKEDmaN/CPCSyntaxError CPCSyntaxError "$CPCSE_TAG"
+    # make shot: no vsync with the hidden window (macOS never refreshes it - the emulator stood still)
+    git -C "$SRC/CPCSyntaxError" apply --reverse --check "$K/tools/patches/cpcse-hidden-window-no-vsync.patch" 2>/dev/null \
+        || git -C "$SRC/CPCSyntaxError" apply "$K/tools/patches/cpcse-hidden-window-no-vsync.patch"
     ( cd "$SRC/CPCSyntaxError" && cmake -S . -B "$K/build/cpcse" -G Ninja -DCMAKE_BUILD_TYPE=Release \
         && cmake --build "$K/build/cpcse" ) >"$LOG/cpcse.log" 2>&1
     # the program, its ROMs (CPC firmware, AMSDOS, M4ROM by Duke) and sounds; settings go to build/cpcse-home
