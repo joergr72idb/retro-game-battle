@@ -35,3 +35,7 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   the file's end, `-record-video` writes build/shot.avi, ffmpeg takes the last frame. Next to the live BBS use
   `NETSIO_PORT=9996 WEB_PORT=8002`. Tested 2026-11-15: hello-c, typed text with Shift, both joysticks, fire, START, CTRL.
   Uppercase letters are typed with Shift (unshifted letters came out lowercase in cc65's cgetc).
+- `samples/demo.*` (2026-11-16): `.align` in ca65 only works when the linker config allows it - with the stock
+  atari.cfg ld65 warns "Segment isn't aligned properly" and ignores it; hence `samples/demo.cfg` (align on DATA/BSS).
+  Verified headless: `make shot XEX=build/demo.xex FRAMES=1200`, frames at other times via
+  `ffmpeg -ss T -i build/shot.avi -frames:v 1`, the music via the AVI's audio track (RMS per second).
