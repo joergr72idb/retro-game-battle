@@ -97,7 +97,8 @@ MON_PORT  ?= 6520
 shot: $(PRG) fujinet
 	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET) vice
 	rm -f build/shot.png build/shot.txt
-	$(LIBPATH)=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) python3 -I tools/c64shot.py $(MON_PORT) $(FRAMES) '$(KEYS)' \
+	# macOS drops DYLD_* on the way through /usr/bin/python3 (SIP): c64shot.py sets it for VICE itself
+	BRIDGE_LIBPATH=$(LIBPATH) BRIDGE_DIR=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) python3 -I tools/c64shot.py $(MON_PORT) $(FRAMES) '$(KEYS)' \
 	  $(DEV)/build/shot -- $(VICE)/x64sc $(subst vice-run.log,vice-shot.log,$(VICE_ARGS)) $(VICE_UNITS) -autostart $(PRG)
 
 # only this kit's instance (matched by its path), never other projects' FujiNet-PC
