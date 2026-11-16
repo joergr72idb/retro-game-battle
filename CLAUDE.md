@@ -32,3 +32,7 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   `src/fujinet-network-cpc` (not in the default run - the kit stays MIT); `make fujinet` builds
   samples/fnhello.c -> FNHELLO.BIN. Test: `make shot CMD='RUN"FNHELLO"' FRAMES=600`, then `make stop`
   (two GET /hello.txt in www.log). Bump `FNCPC_REV` in both setup scripts together.
+- macOS: `setup-macos.sh` applies `tools/patches/cpcse-hidden-window-no-vsync.patch` (2026-11-16): with
+  `CPCSE_HIDDEN_WINDOW` SDL3's Cocoa swap waited forever for a refresh of the hidden window - `make shot` timed
+  out on the first API call. Check the patch still applies when bumping `CPCSE_TAG`. Never `cp` over a signed
+  binary that ran before (macOS kills the new one, exit 137): `rm` first.

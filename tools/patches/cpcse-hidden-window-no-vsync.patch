@@ -1,0 +1,36 @@
+CPCSyntaxError v0.16.0, macOS only (applied by tools/setup-macos.sh): with CPCSE_HIDDEN_WINDOW
+(make shot) no vsync. SDL's Cocoa swap waits for a display refresh a hidden window never gets,
+so the main loop - and the command API - stood still. The emulator keeps time by its own clock;
+the 2 ms sleep only keeps the loop from spinning.
+
+diff --git a/src/gui/main.cpp b/src/gui/main.cpp
+index b07fa1c..31c116d 100644
+--- a/src/gui/main.cpp
++++ b/src/gui/main.cpp
+@@ -877,7 +877,8 @@ int main(int argc, char** argv) {
+         SDL_DestroyWindow(window); SDL_Quit(); return 1;
+     }
+     SDL_GL_MakeCurrent(window, gl);
+-    SDL_GL_SetSwapInterval(1);
++    const bool hiddenWindow = std::getenv("CPCSE_HIDDEN_WINDOW") != nullptr;
++    SDL_GL_SetSwapInterval(hiddenWindow ? 0 : 1);
+ 	enableDarkTitleBar(window);
+ 
+     IMGUI_CHECKVERSION();
+@@ -1265,7 +1266,7 @@ int main(int argc, char** argv) {
+         // next refresh left the machine idle for part of every refresh).
+         host.pollRecorder();                   // an MP4 finished in the background: its result
+         static bool swapWaits = true;
+-        if (swapWaits == unlimited) { swapWaits = !unlimited; SDL_GL_SetSwapInterval(swapWaits ? 1 : 0); }
++        if (swapWaits == unlimited) { swapWaits = !unlimited; SDL_GL_SetSwapInterval(swapWaits && !hiddenWindow ? 1 : 0); }
+         // (plus what the last picture cost, so the CPC has at least half the time when the
+         // picture is dear: the CRT effect's blur and slot mask are milliseconds each)
+         static uint64_t uiCost = 0;
+@@ -1371,6 +1372,7 @@ int main(int argc, char** argv) {
+             SDL_GL_MakeCurrent(backupWindow, backupContext);
+         }
+         SDL_GL_SwapWindow(window);
++        if (hiddenWindow) SDL_Delay(2);
+         uiCost = SDL_GetPerformanceCounter() - uiStart;
+     }
+ 
