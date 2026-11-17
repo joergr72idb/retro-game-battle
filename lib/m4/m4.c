@@ -10,6 +10,9 @@
 #define C_NETSEND       0x4334
 #define C_NETRECV       0x4335
 #define C_NETHOSTIP     0x4336
+#define C_NETBIND       0x4338
+#define C_NETLISTEN     0x4339
+#define C_NETACCEPT     0x433A
 
 #define ROM_RESPONSE    0xFF02  /* pointers in the M4 ROM (link table) */
 #define ROM_SOCKINFO    0xFF06
@@ -177,6 +180,19 @@ unsigned char m4_socket(void)
 {
     static const unsigned char tcp[3] = { 0, 0, 6 };   /* domain, type, protocol = TCP */
     return m4_command(C_NETSOCKET, tcp, 3, 1)[0];
+}
+
+unsigned char m4_listen(unsigned char s, unsigned int port)
+{
+    req[0] = s;
+    req[1] = req[2] = req[3] = req[4] = 0;  /* every address of the M4 */
+    req[5] = (unsigned char)port;
+    req[6] = (unsigned char)(port >> 8);
+    if (m4_command(C_NETBIND, req, 7, 1)[0] != 0
+        || m4_command(C_NETLISTEN, &s, 1, 1)[0] != 0
+        || m4_command(C_NETACCEPT, &s, 1, 1)[0] != 0)
+        return M4_ERROR;
+    return 0;
 }
 
 unsigned char m4_connect(unsigned char s, const unsigned char *ip, unsigned int port)

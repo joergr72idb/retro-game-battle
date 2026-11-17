@@ -3,7 +3,7 @@
  * Talks to the M4 through its documented command interface (Duke, spinpoint.org/cpc/m4info.txt):
  * command bytes go to port &FE00, a write to &FC00 starts the command, and the M4 answers in a
  * buffer inside its own ROM. Covers HTTP downloads into memory (like |HTTPMEM), TCP client
- * sockets and DNS. IP addresses are in normal order: {192, 168, 1, 10}.
+ * and server sockets and DNS. IP addresses are in normal order: {192, 168, 1, 10}.
  */
 #ifndef M4_H
 #define M4_H
@@ -15,6 +15,7 @@
 #define M4_CONNECTING   1
 #define M4_SENDING      2
 #define M4_CLOSED       3       /* the other side closed the connection */
+#define M4_ACCEPTING    4       /* m4_listen: waiting for a client */
 #define M4_DNS_LOOKUP   5
                                 /* 240-255: error codes */
 
@@ -28,12 +29,17 @@ unsigned int m4_http_get(const char *url, unsigned char *buf, unsigned int max);
 /* DNS: 0 = ok, ip gets the address */
 unsigned char m4_dns(const char *host, unsigned char *ip);
 
-/* TCP client sockets. Sockets are 1-4. */
+/* TCP sockets. Sockets are 1-4. */
 unsigned char m4_socket(void);                                  /* socket number or M4_ERROR */
 unsigned char m4_connect(unsigned char s, const unsigned char *ip, unsigned int port);  /* 0 = ok */
 unsigned char m4_send(unsigned char s, const void *data, unsigned int len);              /* 0 = ok */
 int m4_recv(unsigned char s, void *buf, unsigned int max);      /* bytes, 0 = none yet, -1 = closed */
 void m4_close(unsigned char s);
+/* TCP server: a new socket listens on port (all addresses) and waits for one client: its status is
+ * M4_ACCEPTING until a client connects, then M4_IDLE - the socket is now that connection (send,
+ * recv, close as above) and no longer listens; for the next client call m4_socket + m4_listen
+ * again. 0 = ok (M4_ERROR: e.g. the port is in use). As Duke's tcpserv.s example. */
+unsigned char m4_listen(unsigned char s, unsigned int port);
 unsigned char m4_sock_status(unsigned char s);
 
 /* any M4 command: returns the response data (after the 3-byte header), copy bytes of it */

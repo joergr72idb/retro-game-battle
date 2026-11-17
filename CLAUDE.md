@@ -36,6 +36,10 @@ Toolchain only - real programs live in their own project folders and point `DEV`
 - M4 protocol details verified against Duke's examples and the emulator source: sizes and ports are
   little-endian, IP addresses last octet first, the socket table updates by itself (poll it).
   `|HTTPGET`/`|HTTPMEM` are not emulated by the "1984" emulator - CPCSyntaxError does them.
+- `m4_listen` (2026-11-17): C_NETBIND (ip 0 = all) + C_NETLISTEN + C_NETACCEPT, as Duke's tcpserv.s - the socket
+  becomes the connection, listening stops (CPCSyntaxError closes the listening fd on accept and binds to 127.0.0.1
+  unless its LAN option is on). Tested through fujinet-network-cpc's T5 (two clients one after the other); not
+  yet on a real M4.
 - Test server: `make www` (127.0.0.1:8765, samples/www). `build/logs/www.log` shows the requests that
   arrived - a quick way to verify network code without the screen.
 - Optional fujinet-network-cpc (GPL-3, our own repo): setup part `fujinet` clones it at `FNCPC_REV` into
