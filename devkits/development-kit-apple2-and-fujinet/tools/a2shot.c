@@ -1,7 +1,8 @@
 /* a2shot - headless run of FujiNet Go Apple II (its session core, no window), for `make shot`:
  * boots the machine with the built-in FujiNet, optionally straight from a disk image on the
  * FujiNet SD card (CONFIG off), types a key script, and after FRAMES frames writes the screen as
- * PNG, the 40-column text screen as text and the FujiNet console log.
+ * PNG, the 40-column text screen as text and the FujiNet console log. The sound of the whole run
+ * (speaker and Mockingboard) goes to OUT_PREFIX.wav.
  *
  *   a2shot CONFIG_DIR DATA_DIR RUNTIME_SRC FRAMES 'SCRIPT' OUT_PREFIX [DISK_NAME]
  *
@@ -18,6 +19,7 @@
  * It links FujiNet Go's GPL-3.0-or-later session library, so the a2shot binary is GPL-3 too.
  */
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +39,41 @@ static void die(const char *msg, const char *arg)
     fprintf(stderr, "a2shot: %s%s\n", msg, arg ? arg : "");
     if (S) { apple2session_stop(S); apple2session_free(S); }
     exit(1);
+}
+
+/* ---- sound: pulled from the session (44100 Hz stereo S16) into a WAV file ------------------ */
+static FILE *wav;
+static volatile int wav_stop;
+static uint32_t wav_bytes;
+
+static void wav_header(void)
+{
+    unsigned char h[44];
+    uint32_t rate = 44100, byterate = rate * 4;
+    memcpy(h, "RIFF", 4); h[4] = (36 + wav_bytes) & 255; h[5] = (36 + wav_bytes) >> 8 & 255;
+    h[6] = (36 + wav_bytes) >> 16 & 255; h[7] = (36 + wav_bytes) >> 24;
+    memcpy(h + 8, "WAVEfmt ", 8);
+    h[16] = 16; h[17] = h[18] = h[19] = 0; h[20] = 1; h[21] = 0; h[22] = 2; h[23] = 0;
+    h[24] = rate & 255; h[25] = rate >> 8 & 255; h[26] = rate >> 16; h[27] = 0;
+    h[28] = byterate & 255; h[29] = byterate >> 8 & 255; h[30] = byterate >> 16 & 255; h[31] = 0;
+    h[32] = 4; h[33] = 0; h[34] = 16; h[35] = 0;
+    memcpy(h + 36, "data", 4); h[40] = wav_bytes & 255; h[41] = wav_bytes >> 8 & 255;
+    h[42] = wav_bytes >> 16 & 255; h[43] = wav_bytes >> 24;
+    fseek(wav, 0, SEEK_SET);
+    fwrite(h, 1, 44, wav);
+}
+
+/* render_audio waits for a whole block from the emulator (or pads with silence), so this paces
+ * itself at the emulator's speed */
+static void *wav_thread(void *arg)
+{
+    static int16_t buf[1470];             /* 1/60 s, stereo */
+    (void)arg;
+    while (!wav_stop) {
+        apple2session_render_audio(S, buf, 1470);
+        wav_bytes += fwrite(buf, 2, 1470, wav) * 2;
+    }
+    return NULL;
 }
 
 /* ---- frame clock ------------------------------------------------------------------------- */
@@ -296,9 +333,39 @@ int main(int argc, char **argv)
     set_boot_disk(path, disk);
     if (apple2session_start(S, &o) != 0) die("start failed: ", apple2session_last_error(S));
     start_frame = apple2session_frame_count(S);
+    pthread_t wav_tid;
+    snprintf(path, sizeof path, "%s.wav", outp);
+    wav = fopen(path, "wb");
+    if (wav) {
+        wav_header();
+        pthread_create(&wav_tid, NULL, wav_thread, NULL);
+    }
 
     run_script(script);
+    /* PEEK=addr:len with PEEK_EVERY=N: print that memory every N frames while waiting */
+    const char *every = getenv("PEEK_EVERY");
+    if (every && atoi(every) > 0 && getenv("PEEK")) {
+        int n = atoi(every);
+        unsigned addr = (unsigned)strtoul(getenv("PEEK"), NULL, 16), len = 1;
+        const char *colon = strchr(getenv("PEEK"), ':');
+        if (colon) len = (unsigned)atoi(colon + 1);
+        if (len > 256) len = 256;
+        for (uint64_t f = cursor - cursor % n + n; f < (uint64_t)frames; f += n) {
+            uint8_t b[256];
+            wait_until(f);
+            apple2debug_read(apple2session_debugger(S), (uint16_t)addr, b, len);
+            printf("a2shot: frame %llu peek %04X:", (unsigned long long)f, addr);
+            for (unsigned i = 0; i < len; i++) printf(" %02X", b[i]);
+            printf("\n");
+        }
+    }
     wait_until(frames);
+    if (wav) {
+        wav_stop = 1;
+        pthread_join(wav_tid, NULL);
+        wav_header();
+        fclose(wav);
+    }
 
     static uint32_t px[APPLE2SESSION_FB_MAX_WIDTH * APPLE2SESSION_FB_MAX_HEIGHT];
     uint64_t serial = 0;
@@ -315,6 +382,19 @@ int main(int argc, char **argv)
     FILE *f = fopen(path, "w");
     if (f) { fwrite(log, 1, n, f); fclose(f); }
 
+    /* PEEK=addr:len (hex address): print that memory at the end, e.g. a program's frame counter */
+    const char *peek = getenv("PEEK");
+    if (peek && *peek) {
+        unsigned addr = (unsigned)strtoul(peek, NULL, 16), len = 1;
+        const char *colon = strchr(peek, ':');
+        if (colon) len = (unsigned)atoi(colon + 1);
+        if (len > 256) len = 256;
+        uint8_t b[256];
+        apple2debug_read(apple2session_debugger(S), (uint16_t)addr, b, len);
+        printf("a2shot: peek %04X:", addr);
+        for (unsigned i = 0; i < len; i++) printf(" %02X", b[i]);
+        printf("\n");
+    }
     printf("a2shot: %d frames, %dx%d, FujiNet link %s\n", frames, w, h,
            apple2session_fujinet_link(S) ? "up" : "down");
     apple2session_stop(S);

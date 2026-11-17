@@ -47,7 +47,7 @@ clone() {  # clone <github repo> <dir> <ref>
 }
 
 prereqs() {
-    apt_need build-essential git cmake ninja-build python3 libsdl3-dev libboost-dev zlib1g-dev libgtk-4-dev libadwaita-1-dev gh unzip curl
+    apt_need build-essential git cmake ninja-build python3 libsdl3-dev libboost-dev zlib1g-dev libgtk-4-dev libadwaita-1-dev libssl-dev unzip curl
 }
 
 build_cc65() {
@@ -60,7 +60,7 @@ build_cc65() {
 build_fujinet_lib() {
     step fujinet-lib fujinet-lib
     rm -rf "$OPT/fujinet-lib" && mkdir -p "$OPT/fujinet-lib"
-    ( cd "$OPT/fujinet-lib" && gh release download "$FNLIB_TAG" -R FujiNetWIFI/fujinet-lib -p "fujinet-lib-apple2-*.zip" \
+    ( cd "$OPT/fujinet-lib" && curl -fsSLO "https://github.com/FujiNetWIFI/fujinet-lib/releases/download/$FNLIB_TAG/fujinet-lib-apple2-${FNLIB_TAG#v}.zip" \
         && unzip -oq fujinet-lib-apple2-*.zip ) >"$LOG/fujinet-lib.log" 2>&1
     ls "$OPT"/fujinet-lib/fujinet-apple2-*.lib
 }
