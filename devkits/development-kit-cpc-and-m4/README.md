@@ -16,7 +16,7 @@ carries a `Co-Authored-By: Claude` line. The tools it builds are other people's 
 | [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) | 0.16.0 | Emulator (MIT) with M4 board: SD card = a Mac folder, WiFi = the Mac's network, `\|HTTPGET`/`\|HTTPMEM`, TCP sockets. Includes the CPC ROMs and Duke's M4 ROM |
 | `lib/m4` | ours | C library for the M4: HTTP into memory, TCP client and server sockets, DNS |
 | `lib/cpc` | ours | SDCC startup code (`crt0.s`), `printf` and keyboard through the CPC firmware |
-| [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | aef3b77, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP and HTTP) on the M4. GPL-3.0-or-later |
+| [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | acbf917, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP client and server, HTTP) on the M4. GPL-3.0-or-later |
 
 ```
 sdcc / rasm ──► build/*.BIN (AMSDOS header) ──► m4sd/ (the emulated M4's SD card) + build/samples.dsk
