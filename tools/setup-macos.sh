@@ -27,7 +27,7 @@ clone() {  # clone <github repo> <dir> <ref>
 }
 
 prereqs() {
-    brew install autoconf automake cmake pkgconf sdl2 mbedtls@3 gh
+    brew install autoconf automake cmake pkgconf sdl2 mbedtls@3
 }
 
 build_cc65() {
@@ -40,7 +40,7 @@ build_cc65() {
 build_fujinet_lib() {
     step fujinet-lib fujinet-lib
     rm -rf "$OPT/fujinet-lib" && mkdir -p "$OPT/fujinet-lib"
-    ( cd "$OPT/fujinet-lib" && gh release download "$FNLIB_TAG" -R FujiNetWIFI/fujinet-lib -p "*atari*" \
+    ( cd "$OPT/fujinet-lib" && curl -fsSLO "https://github.com/FujiNetWIFI/fujinet-lib/releases/download/$FNLIB_TAG/fujinet-lib-atari-${FNLIB_TAG#v}.zip" \
         && unzip -oq fujinet-lib-atari-*.zip ) >"$LOG/fujinet-lib.log" 2>&1
     ls "$OPT"/fujinet-lib/fujinet-atari-*.lib
 }

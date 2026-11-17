@@ -27,7 +27,7 @@ tools/setup-linux.sh atari800  # rebuild single parts: cc65 fujinet-lib atari800
 ```
 
 Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
-`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libmbedtls-dev python3-venv gh unzip curl`
+`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libmbedtls-dev python3-venv libssl-dev unzip curl`
 
 Versions are pinned at the top of both setup scripts (keep them in step). Build logs go to `build/logs/`.
 
@@ -102,6 +102,19 @@ Samples in `samples/`:
 
 `opt/fastbasic/fastbasic.atr` is the FastBasic IDE for the Atari itself (boot it as a disk).
 
+## The same demo on four machines
+
+The kits for the Atari XL, the C64, the CPC and the Apple II each have this demo as a sample: the same
+tune and the temperature in Celle, fetched live over the network - each made with its own machine's means.
+
+| [Atari XL + FujiNet](https://github.com/joergr72idb/development-kit-atari-xl-and-fujinet) | [C64 + FujiNet](https://github.com/joergr72idb/development-kit-c64-and-fujinet) |
+|:---:|:---:|
+| ![The demo on the Atari XL](docs/demos/atari.png) | ![The demo on the C64](docs/demos/c64.png) |
+| display list interrupts, fine scrolling with HSCROL, POKEY | letters as holes in characters with a rainbow behind them, $D016, SID |
+| **[CPC + M4](https://github.com/joergr72idb/development-kit-cpc-and-m4)** | **[Apple II + FujiNet](https://github.com/joergr72idb/development-kit-apple2-and-fujinet)** |
+| ![The demo on the CPC](docs/demos/cpc.png) | ![The demo on the Apple II](docs/demos/apple2.png) |
+| Gate Array colours on every scan line, counted to the microsecond, AY | lo-res drawn again every frame into the hidden page, Mockingboard |
+
 ## Notes
 
 - Compile with `-t atari`, not `-t atarixl`: fujinet-lib calls the OS SIO vector, which the
@@ -120,7 +133,8 @@ Samples in `samples/`:
 - **ROMs:** `atari800.cfg` uses the original Atari ROMs from `rom/` (not in git, copyrighted):
   `REV02.ROM` = 800XL OS rev. 2 (default), plus 400/800 rev. A PAL/B NTSC, 1200XL rev. 10,
   600XL rev. 1, 800XE rev. 3, XEGS rev. 4 and BASIC A/B/C (CRC-32 list: `rom/OSROMS.TXT`).
-  Without them atari800 falls back to its built-in AltirraOS. atari800 is built with
+  Without `rom/REV02.ROM`, `make run` and `make shot` start atari800 with its built-in AltirraOS
+  (`-xl-rev altirra`) - atari800 doesn't fall back by itself, the screen just stays black. atari800 is built with
   `--disable-download`, so it never fetches ROMs from the internet on its own.
 
 ## Using the kit from other projects
