@@ -19,6 +19,16 @@ Toolchain only - real programs live in their own project folders and point `DEV`
   Linux with `tools/bmp2png.py`). Typing (`--type`) needs ~600 frames before the result is on screen;
   fewer and the text never appears.
 - Don't put `\` before `&` in `CMD` - it reaches the CPC literally.
+- Sound: only the headless mode records (`--wav`/`--record` are read in main.cpp's `--shot` path; the GUI ignores
+  them) - `make fastshot` writes build/shot.wav. The AY output has a DC offset (no coupling capacitor), so a
+  spectrogram shows a band from 0 Hz: not a bug in the tune (2026-11-17).
+- Screenshots go through a smoothing filter: edges between colours blend over a few pixels. To check raster
+  timing, decode the PNG and compare border (x=20, x=750) with the screen (x=66, x=700) line by line; a screen line
+  is 2 PNG rows, screen line 0 is PNG row 78, 1 us = 16 PNG pixels.
+- samples/demo: the raster routine is generated (samples/demo_raster.py -> build/demo_raster.s) with the timing in
+  NOPs (OUTI 5, LDI 5, ADD HL 3, LD rr,nn 3, EXX 1). `RASTER_DELAY` 1010 puts the colour writes into the
+  horizontal blank (checked with a moving test pattern, 2026-11-17). `--dumpram file` (headless) dumps the RAM;
+  the demo's frame counter rose 100 in 100 frames: 50 fps.
 - `RUN"X"` of a binary resets the firmware, and the CPC restarts when the program returns: samples wait
   for a key. `LOAD` of a binary into &4000 needs `MEMORY &3FFF` first (else "Memory full").
 - SDCC: `crt0.s` must be the first object (its JP at &4000 is the entry); `--code-loc 0x4010`.

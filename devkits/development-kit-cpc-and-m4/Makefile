@@ -3,7 +3,7 @@
 # own M4 library: HTTP into memory, TCP sockets, DNS). Tools in opt/
 # (built by tools/setup-macos.sh or tools/setup-linux.sh).
 #
-#   make              build the samples: build/HELLOC.BIN, HELLOA.BIN, HELLO.BAS + build/samples.dsk,
+#   make              build the samples: build/HELLOC.BIN, HELLOA.BIN, HELLO.BAS, DEMO.BIN + build/samples.dsk,
 #                     and copy them onto the emulated M4's SD card (m4sd/)
 #   make www          local test web server for the network samples (127.0.0.1:8765, samples/www)
 #   make run          the emulator in a window, M4 on, SD card = m4sd/ (then: RUN"HELLOC")
@@ -11,7 +11,7 @@
 #                     keys from KEYS (tools/cpcshot.py, the emulator's command API on API_PORT), FRAMES frames
 #                     after CMD (default 600 = 12 s), screenshot in build/shot.png (for tests)
 #   make fastshot CMD='RUN"HELLOC"'   the emulator's own headless mode: as fast as it can (not real
-#                     time - network timing differs), no KEYS, screenshot in build/shot.png
+#                     time - network timing differs), no KEYS, screenshot in build/shot.png, sound in build/shot.wav
 #   make stop         stops the test web server
 #   make fujinet      optional: build/FNHELLO.BIN with fujinet-network-cpc (FujiNet's fujinet-lib
 #                     network API on the M4; fetch it first: tools/setup-linux.sh|setup-macos.sh fujinet)
@@ -43,7 +43,7 @@ OBJ       := build/obj
 
 .PHONY: all sd www run shot fastshot stop clean fujinet fncheck
 
-all: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/samples.dsk sd
+all: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/DEMO.BIN build/samples.dsk sd
 
 $(OBJ)/crt0.rel: lib/cpc/crt0.s | $(OBJ)
 	$(SDASZ80) -o $@ $<
@@ -61,6 +61,25 @@ $(OBJ)/hello.rel: samples/hello.c lib/cpc/cpc.h lib/m4/m4.h | $(OBJ)
 build/HELLOC.BIN: $(OBJ)/crt0.rel $(OBJ)/hello.rel $(OBJ)/cpc.rel $(OBJ)/m4.rel
 	$(SDCC) $(LDFLAGS) -o build/hello.ihx $^
 	python3 -I tools/cpcbin.py build/hello.ihx $@
+
+# the demo: C (network, screen), demo_fx.s (interrupts, colours, music) and the raster routine,
+# generated with its timing counted in microseconds (RASTER_DELAY: from the interrupt to line 0)
+RASTER_DELAY ?= 1010
+build/demo_raster.s: samples/demo_raster.py Makefile | $(OBJ)
+	python3 -I $< $(RASTER_DELAY) > $@
+
+$(OBJ)/demo_raster.rel: build/demo_raster.s
+	$(SDASZ80) -o $@ $<
+
+$(OBJ)/demo_fx.rel: samples/demo_fx.s | $(OBJ)
+	$(SDASZ80) -o $@ $<
+
+$(OBJ)/demo.rel: samples/demo.c lib/cpc/cpc.h lib/m4/m4.h | $(OBJ)
+	$(SDCC) $(CFLAGS) -c -o $@ $<
+
+build/DEMO.BIN: $(OBJ)/crt0.rel $(OBJ)/demo.rel $(OBJ)/demo_fx.rel $(OBJ)/demo_raster.rel $(OBJ)/cpc.rel $(OBJ)/m4.rel
+	$(SDCC) $(LDFLAGS) -o build/demo.ihx $^
+	python3 -I tools/cpcbin.py build/demo.ihx $@
 
 # optional: the fujinet-network sample, compiled with the library's sources
 FN_CFLAGS := $(CFLAGS) -I $(FNCPC)/include
@@ -90,17 +109,18 @@ build/HELLOA.BIN: samples/hello.asm | $(OBJ)
 build/HELLO.BAS: samples/hello.bas | $(OBJ)
 	cp $< $@
 
-build/samples.dsk: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS
+build/samples.dsk: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/DEMO.BIN
 	rm -f $@
 	$(IDSK) $@ -n > /dev/null
 	$(IDSK) $@ -i build/HELLOC.BIN > /dev/null      # one file per call; the header is kept
 	$(IDSK) $@ -i build/HELLOA.BIN > /dev/null
+	$(IDSK) $@ -i build/DEMO.BIN > /dev/null
 	$(IDSK) $@ -i build/HELLO.BAS -t 0 > /dev/null
 
 $(OBJ):
 	mkdir -p $@ build/logs build/cpcse-home
 
-sd: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS
+sd: build/HELLOC.BIN build/HELLOA.BIN build/HELLO.BAS build/DEMO.BIN
 	mkdir -p $(M4SD)
 	cp $^ $(M4SD)/
 
@@ -132,7 +152,7 @@ shot: all www build/cpcse-home/cpcse.ini | $(OBJ)
 # headless and as fast as it can: the shot mode finds its ROMs only in the current folder, hence the cd
 fastshot: all www | $(OBJ)
 	cd $(CPCSE) && $(CPCSE_ENV) ./cpcse --shot $(DEV)/build/shot.bmp --model cpc6128 \
-	  --frames $(FRAMES) --m4 $(M4SD) --type '$(CMD)\n' > $(DEV)/build/logs/shot.log 2>&1
+	  --frames $(FRAMES) --m4 $(M4SD) --type '$(CMD)\n' --wav $(DEV)/build/shot.wav > $(DEV)/build/logs/shot.log 2>&1
 	$(if $(filter Darwin,$(UNAME)),sips -s format png build/shot.bmp --out build/shot.png > /dev/null,python3 -I tools/bmp2png.py build/shot.bmp build/shot.png)
 	@echo "screenshot: build/shot.png"
 
@@ -140,4 +160,4 @@ stop:
 	@pkill -f "$(WWW_PROC)" || true
 
 clean:
-	rm -rf build/obj build/*.BIN build/*.BAS build/*.dsk build/*.ihx build/*.map build/*.lk build/*.noi build/shot.*
+	rm -rf build/obj build/*.BIN build/*.BAS build/*.dsk build/*.ihx build/*.map build/*.lk build/*.noi build/shot.* build/demo_raster.s
