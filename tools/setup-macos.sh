@@ -26,7 +26,7 @@ clone() {  # clone <github repo> <dir> <ref>
 }
 
 prereqs() {
-    brew install cmake ninja sdl3 boost gh
+    brew install cmake ninja sdl3 boost
 }
 
 build_cc65() {
@@ -39,7 +39,7 @@ build_cc65() {
 build_fujinet_lib() {
     step fujinet-lib fujinet-lib
     rm -rf "$OPT/fujinet-lib" && mkdir -p "$OPT/fujinet-lib"
-    ( cd "$OPT/fujinet-lib" && gh release download "$FNLIB_TAG" -R FujiNetWIFI/fujinet-lib -p "fujinet-lib-apple2-*.zip" \
+    ( cd "$OPT/fujinet-lib" && curl -fsSLO "https://github.com/FujiNetWIFI/fujinet-lib/releases/download/$FNLIB_TAG/fujinet-lib-apple2-${FNLIB_TAG#v}.zip" \
         && unzip -oq fujinet-lib-apple2-*.zip ) >"$LOG/fujinet-lib.log" 2>&1
     ls "$OPT"/fujinet-lib/fujinet-apple2-*.lib
 }
