@@ -100,7 +100,7 @@ Development continues. Issues and ideas are welcome.
   HTTP errors as FujiNet error codes, body of an error response readable.
 - Response headers (`HTTP_CHAN_MODE_COLLECT_HEADERS` / `_GET_HEADERS`), redirects (301/302),
   `OPEN_MODE_HTTP_PUT` (2026-11-17).
-- TCP-only build (`-DFN_NO_HTTP`, 2.9 KB smaller), used by Retro Game Battle.
+- TCP-only build (`-DFN_NO_HTTP`, about 5.5 KB smaller), used by Retro Game Battle.
 - Test program against a local test server (`make test`, both variants) - in the emulator.
 
 **Open** (roughly in the planned order)
