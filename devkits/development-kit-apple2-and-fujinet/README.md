@@ -3,6 +3,10 @@
 A self-contained toolchain for macOS and Linux for Apple II programs that use the FujiNet, tested in an emulator
 with FujiNet built in. Everything is built into `opt/` inside this folder.
 
+**Vibe coded:** this kit - the setup scripts, Makefiles, tools, samples and docs - was generated with
+[Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant, from prompts; every commit
+carries a `Co-Authored-By: Claude` line. The tools it builds are other people's work (see below).
+
 | Tool | Version | What it is |
 |---|---|---|
 | [cc65](https://github.com/cc65/cc65) | V2.19 (git) | C compiler and ca65 assembler (`-t apple2enh`) |
