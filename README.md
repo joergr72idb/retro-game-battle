@@ -16,7 +16,7 @@ carries a `Co-Authored-By: Claude` line. The tools it builds are other people's 
 | [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) | 0.16.0 | Emulator (MIT) with M4 board: SD card = a Mac folder, WiFi = the Mac's network, `\|HTTPGET`/`\|HTTPMEM`, TCP sockets. Includes the CPC ROMs and Duke's M4 ROM |
 | `lib/m4` | ours | C library for the M4: HTTP into memory, TCP client sockets, DNS |
 | `lib/cpc` | ours | SDCC startup code (`crt0.s`), `printf` and keyboard through the CPC firmware |
-| [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | 841f7c0, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP and HTTP) on the M4. GPL-3.0-or-later |
+| [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | aef3b77, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP and HTTP) on the M4. GPL-3.0-or-later |
 
 ```
 sdcc / rasm ──► build/*.BIN (AMSDOS header) ──► m4sd/ (the emulated M4's SD card) + build/samples.dsk
@@ -173,7 +173,7 @@ network_close("N1:");
 `src/fujinet-network-cpc`; `make fujinet` builds the sample `samples/fnhello.c`. In your own program:
 compile `$(DEV)/src/fujinet-network-cpc/src/fujinet-network.c` with
 `-I $(DEV)/src/fujinet-network-cpc/include -I $(DEV)/lib/m4` and link it with `m4.rel` (add
-`-DFN_NO_HTTP` if you only need TCP: about 2.9 KB smaller). What works and what doesn't (no HTTPS,
+`-DFN_NO_HTTP` if you only need TCP: about 5.5 KB smaller). What works and what doesn't (no HTTPS,
 UDP or listening yet) is in its README.
 
 It is not part of the default setup because of its licence: the kit is MIT, the library is
