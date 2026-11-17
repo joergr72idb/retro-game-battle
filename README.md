@@ -62,7 +62,8 @@ make www                       # test web server for the network samples (127.0.
 make run                       # emulator window, CPC 6128 with M4 (starts the test server too)
 make shot CMD='RUN"HELLOC"'    # run without a visible window, screenshot -> build/shot.png (FRAMES=600)
 make shot CMD='RUN"HELLOC"' KEYS='wait 300; key SPACE; type PRINT 6*7\n'
-make fastshot CMD='RUN"HELLOC"'   # the emulator's own headless mode: faster than real time, no KEYS
+make fastshot CMD='RUN"HELLOC"'   # the emulator's own headless mode: faster than real time, no KEYS,
+                               # the sound of the run in build/shot.wav
 make stop                      # stops the test web server
 make fujinet                   # optional: build/FNHELLO.BIN with fujinet-network-cpc, onto the SD card
 ```
@@ -74,6 +75,7 @@ RUN"HELLOC"                              C: M4 version, HTTP download into memor
 MEMORY &3FFF:LOAD"HELLOA":CALL &4000     assembler: prints a line, back to BASIC after a key
 RUN"HELLO.BAS"                           BASIC: |NETSTAT and |HTTPMEM (the game clients' pattern)
 RUN"FNHELLO"                             C with fujinet-network (after make fujinet): HTTP GET + TCP
+RUN"DEMO"                                the demo (below); it runs until you reset the CPC
 ```
 
 `RUN` of a binary resets the firmware: the CPC restarts when the program ends. To return to
@@ -88,6 +90,50 @@ emulator key code such as `ControlLeft`), `joy DIR [N]` (up, down, left, right, 
 cursor keys and Ctrl, which the emulator's joystick emulation turns into joystick 0). It needs a
 desktop session (the window is hidden, not absent). `make fastshot` uses the emulator's own `--shot`
 mode instead: no window at all, but as fast as it can, so a network program sees other timing.
+It also records the sound of the run to `build/shot.wav` (the emulator's `--wav`; it only works in
+this mode). E.g. `ffmpeg -i build/shot.wav -lavfi showspectrumpic=s=1200x500 spec.png` shows the
+notes without listening.
+
+## The demo (`samples/demo.c`, `demo_fx.s`, `demo_raster.py`)
+
+A small demoscene-style screen: a big logo in the firmware font (doubled) with a rainbow running
+through it, raster bars over the whole width including the border, an info panel, a scroller with a
+rainbow, a 3-voice AY tune (melody, chord arpeggio, drums and bass sharing one voice) and the
+current temperature in Celle, which the CPC fetches itself through the M4 (HTTP + JSON from
+open-meteo.com - the M4 has no HTTPS, open-meteo answers plain HTTP too). It is the CPC version
+of the Atari and C64 kits' demos, with the same tune. `make run`, then `RUN"DEMO"`.
+
+![The demo in CPCSyntaxError: rainbow logo with the temperature, raster bars, info panel, scroller](docs/demo.png)
+
+How it works: all colours change through the Gate Array on every scan line, from a table of 4 bytes
+per line (pen, colour, pen, colour). The CPC has no bad lines, and every Z80 instruction takes a
+whole number of microseconds, so `demo_raster.py` generates the raster routine as 201 unrolled
+lines of exactly 64 µs, timing counted, not measured. The spare time on each line shifts the
+scroller by a byte (LDI), so the frame's remaining time is enough for the music and the next
+frame's colours. The routine starts from the Gate Array interrupt at line 294 (HALT, then a fixed
+delay: `RASTER_DELAY` in the Makefile), which puts the colour writes into the horizontal blank.
+
+An AI assistant (Claude Code) generated the demo from this prompt, after it had made the Atari and
+C64 demos; no code was written by hand. It checked the demo in the kit's loops (`make shot`
+screenshots, a fixed and a moving test pattern decoded line by line, the RAM dumped 100 frames
+apart to confirm the full 50 frames per second, and a spectrogram of the `make fastshot` sound)
+and fixed what it found there. One bug: a step of 3 instead of 2 in the routine that clears the bar
+areas overwrote the table's pen bytes. The timing was right the first time.
+
+> now build the same demo for the cpc toolchain
+
+## The same demo on four machines
+
+The kits for the Atari XL, the C64, the CPC and the Apple II each have this demo as a sample: the same
+tune and the temperature in Celle, fetched live over the network - each made with its own machine's means.
+
+| [Atari XL + FujiNet](https://github.com/joergr72idb/development-kit-atari-xl-and-fujinet) | [C64 + FujiNet](https://github.com/joergr72idb/development-kit-c64-and-fujinet) |
+|:---:|:---:|
+| ![The demo on the Atari XL](docs/demos/atari.png) | ![The demo on the C64](docs/demos/c64.png) |
+| display list interrupts, fine scrolling with HSCROL, POKEY | letters as holes in characters with a rainbow behind them, $D016, SID |
+| **[CPC + M4](https://github.com/joergr72idb/development-kit-cpc-and-m4)** | **[Apple II + FujiNet](https://github.com/joergr72idb/development-kit-apple2-and-fujinet)** |
+| ![The demo on the CPC](docs/demos/cpc.png) | ![The demo on the Apple II](docs/demos/apple2.png) |
+| Gate Array colours on every scan line, counted to the microsecond, AY | lo-res drawn again every frame into the hidden page, Mockingboard |
 
 ## The M4 library (`lib/m4/m4.h`)
 
