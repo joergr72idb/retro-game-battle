@@ -6,7 +6,7 @@
     python3 test/testserver.py [port] [timeout_seconds]
 
 Each connection says what it is in its first line: REPORT (the results, printed here),
-or T1-T4 (a test case). An HTTP server on port+2 answers the HTTP tests (H1-H17). Exits 0
+or T1-T5 (a test case; T5 <port>: the CPC listens there, this connects to it twice). An HTTP server on port+2 answers the HTTP tests (H1-H17). Exits 0
 when fntest reports DONE PASS and the server-side checks passed, 1 otherwise (or on timeout).
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -81,6 +81,24 @@ def handle(conn):
                     time.sleep(0.2)
             elif what == "T4":
                 conn.sendall(b"HI\n")
+                read_exact(conn, 1)
+            elif what.startswith("T5 "):    # the CPC is a server: two clients, one after the other
+                at = (conn.getpeername()[0], int(what[3:]))
+                c = socket.create_connection(at, timeout=30)
+                c.sendall(b"PING\n")
+                first = read_exact(c, 5)
+                c.close()                   # the client ends this one
+                nxt = read_line(conn)       # the CPC saw the end and listens again
+                c = socket.create_connection(at, timeout=30)
+                c.settimeout(30)
+                c.sendall(b"AGAIN\n")
+                second = read_exact(c, 4)
+                end = c.recv(1)             # the CPC ends this one (network_close_client)
+                c.close()
+                ok = first == b"PONG\n" and nxt == "NEXT" and second == b"BYE\n" and end == b""
+                print("server: T5", first, nxt, second, end, "ok" if ok else "WRONG", flush=True)
+                result["server_ok"] &= ok
+                conn.sendall(b"T5OK\n" if ok else b"T5BAD\n")
                 read_exact(conn, 1)
             else:
                 print("server: unknown connection", repr(what), flush=True)

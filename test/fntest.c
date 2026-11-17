@@ -147,6 +147,89 @@ static void t4(void)
     network_close(spec);
 }
 
+/* T5: the CPC as a TCP server on SERVER_PORT + 4 - the test server connects twice */
+static uint8_t bad;
+
+static void check(uint8_t cond, uint8_t step)
+{
+    if (!cond && !bad)
+        bad = step;
+}
+
+/* waits until a client is there for network_accept; 1 = it came */
+static uint8_t wait_client(const char *s)
+{
+    uint16_t bw, i;
+    uint8_t c = 0, err;
+
+    for (i = 0; i < 30000 && !c; ++i)
+        network_status(s, &bw, &c, &err);
+    return c && bw == 0;
+}
+
+static void t5(void)
+{
+    static char lspec[24], cmd[16];
+    uint16_t bw;
+    uint8_t c, err;
+    int16_t r;
+    char d[60];
+
+    bad = 0;
+    sprintf(lspec, "N4:TCP://:%u/", SERVER_PORT + 4);
+    if (network_open(lspec, OPEN_MODE_RW, OPEN_TRANS_NONE) != FN_ERR_OK) {
+        sprintf(d, "open err=%u", fn_network_error);
+        report("T5-server", 0, d);
+        return;
+    }
+    /* nobody there yet */
+    network_status(lspec, &bw, &c, &err);
+    check(!c && !bw && err == NETWORK_SUCCESS, 1);
+    check(network_accept(lspec) == FN_ERR_IO_ERROR && fn_network_error == NETWORK_ERROR_NO_CONNECTION_WAITING, 2);
+    check(network_write(lspec, "x", 1) == FN_ERR_IO_ERROR && fn_network_error == NETWORK_ERROR_NOT_CONNECTED, 3);
+    check(network_read(lspec, buf, 1) < 0, 4);
+    check(network_accept("N2:") == FN_ERR_IO_ERROR && fn_network_error == NETWORK_ERROR_SERVER_NOT_RUNNING, 5);
+
+    sprintf(cmd, "T5 %u\n", SERVER_PORT + 4);
+    if (open_test("N1", cmd) != FN_ERR_OK) {
+        report("T5-server", 0, "open N1");
+        network_close(lspec);
+        return;
+    }
+    /* first client: PING -> PONG, it closes */
+    check(wait_client(lspec), 6);
+    check(network_accept(lspec) == FN_ERR_OK, 7);
+    check(network_accept(lspec) == FN_ERR_IO_ERROR
+          && fn_network_error == NETWORK_ERROR_CONNECTION_ALREADY_IN_PROGRESS, 8);
+    r = network_read(lspec, buf, 5);
+    check(r == 5 && !memcmp(buf, "PING\n", 5), 9);
+    check(network_write(lspec, "PONG\n", 5) == FN_ERR_OK, 10);
+    r = network_read(lspec, buf, 1);
+    check(r == 0 && fn_network_error == NETWORK_ERROR_END_OF_FILE, 11);
+    network_status(lspec, &bw, &c, &err);
+    check(!c && !bw && err == NETWORK_ERROR_END_OF_FILE, 12);
+    check(network_write(lspec, "x", 1) == FN_ERR_IO_ERROR && fn_network_error == NETWORK_ERROR_NOT_CONNECTED, 13);
+    /* second client: AGAIN -> BYE, the CPC ends it */
+    network_write(spec, "NEXT\n", 5);
+    check(wait_client(lspec), 14);
+    check(network_accept(lspec) == FN_ERR_OK, 15);
+    r = network_read(lspec, buf, 6);
+    check(r == 6 && !memcmp(buf, "AGAIN\n", 6), 16);
+    check(network_write(lspec, "BYE\n", 4) == FN_ERR_OK, 17);
+    check(network_close_client(lspec) == FN_ERR_OK, 18);
+    network_status(lspec, &bw, &c, &err);
+    check(!c && err == NETWORK_SUCCESS, 19);
+    check(network_close_client(lspec) == FN_ERR_OK && fn_network_error == NETWORK_ERROR_NOT_CONNECTED, 20);
+    /* the test server's verdict */
+    r = network_read(spec, buf, 5);
+    check(r == 5 && !memcmp(buf, "T5OK\n", 5), 21);
+    network_close(spec);
+    network_close(lspec);               /* stops listening */
+    check(network_accept(lspec) == FN_ERR_IO_ERROR, 22);
+    sprintf(d, "failed at step %u (err=%u)", bad, fn_network_error);
+    report("T5-server", !bad, bad ? d : "two clients");
+}
+
 #ifndef FN_NO_HTTP
 /* ---- HTTP (the test server's HTTP port is SERVER_PORT + 2) ---- */
 
@@ -438,6 +521,7 @@ int main(void)
     t2();
     t3();
     t4();
+    t5();
     sprintf(spec, "N1:TCP://127.0.0.1:%u/", SERVER_PORT + 1);   /* nobody listens there */
     expect("refused", spec, OPEN_MODE_RW, OPEN_TRANS_NONE, FN_ERR_IO_ERROR, NETWORK_ERROR_CONNECTION_REFUSED);
     expect("no-host", "N1:TCP://nosuch.invalid:80/", OPEN_MODE_RW, OPEN_TRANS_NONE,
