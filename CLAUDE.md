@@ -232,8 +232,10 @@ any client in the future.
 - The core uses fujinet-lib's network calls everywhere. The CPC gets them from
   `lib/fujinet-network-cpc` (git subtree of its own public repo https://github.com/joergr72idb/fujinet-network-cpc, GPL-3, same
   API on the M4; `make FNCPC=` for another checkout) instead of calling `lib/m4` directly. Built with `-DFN_NO_HTTP`
-  (TCP only; with HTTP RGBTCP.BIN would be 11.9 instead of 9.1 KB). Update:
+  (TCP only; with HTTP RGBTCP.BIN would be about 15 instead of 9 KB). Update:
   `git subtree pull --prefix=lib/fujinet-network-cpc <repo> main --squash`.
+  Last update 2026-11-17 (bbacc5e+: response headers, redirects, OPEN_MODE_HTTP_PUT - only the shared
+  parsing code reaches the TCP-only client, RGBTCP.BIN 9259 bytes): `tools/handsfree_test.sh cpc` and `--b2b cpc` PASS.
 - Licence: GPL-3.0-or-later since 2026-11-15 (was MIT; the Atari/C64/Apple II binaries link
   fujinet-lib, which is GPL-3) - reason in the README. `devkits/` stay MIT (own LICENSE each),
   `lib/fujinet-network-cpc` is GPL-3 (own LICENSE).

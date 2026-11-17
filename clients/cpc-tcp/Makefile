@@ -25,7 +25,7 @@ SERVER  ?= 127.0.0.1
 PORT    ?= 6502
 NAME    ?= SCHNEIDERCPC
 
-# -DFN_NO_HTTP: the client only needs TCP - fujinet-network-cpc without HTTP (2.9 KB smaller)
+# -DFN_NO_HTTP: the client only needs TCP - fujinet-network-cpc without HTTP (about 5.5 KB smaller)
 CFLAGS  := -mz80 --opt-code-size -I $(DEV)/lib/cpc -I $(DEV)/lib/m4 -I $(FNCPC)/include \
            -I . -I ../common -DFN_NO_HTTP \
            -DSERVER_HOST='"$(SERVER)"' -DSERVER_PORT='"$(PORT)"' -DPLAYER_NAME='"$(NAME)"'
