@@ -9,8 +9,14 @@
  * POST data) goes out with the first status/read in HTTP_CHAN_MODE_BODY - as on the FujiNet,
  * where the request also runs then. POST data written in HTTP_CHAN_MODE_POST_SET_DATA waits in
  * the unit's receive buffer, which is unused until the response comes. The response head is
- * read and dropped (only the status code is kept); the body is then read like a TCP stream up
- * to the end of the connection ("Connection: close", so no chunked transfer).
+ * read (the status code, the response headers the program asked for, a redirect's Location)
+ * and dropped; the body is then read like a TCP stream up to the end of the connection
+ * ("Connection: close", so no chunked transfer).
+ *
+ * Response headers (HTTP_CHAN_MODE_COLLECT_HEADERS / _GET_HEADERS): the names and the values
+ * are kept in one store shared by the units - one unit at a time collects headers.
+ * Redirects: 301 and 302 for GET and DELETE are followed (up to FN_REDIRECTS), as the FujiNet
+ * firmware does. OPEN_MODE_HTTP_PUT: the written data waits in the receive buffer like POST data.
  *
  * -DFN_NO_HTTP leaves HTTP out (about 3 KB less): HTTP opens return NOT_IMPLEMENTED as for
  * other protocols, and the network_http_* functions are not there (a program using them
@@ -30,6 +36,17 @@ enum { M_TCP, M_GET, M_POST, M_PUT, M_DELETE };
 /* HTTP state */
 enum { H_NONE, H_REQUEST, H_HEAD, H_BODY };
 
+#ifndef FN_NO_HTTP
+#ifndef FN_HDR_NAMES
+#define FN_HDR_NAMES  64        /* response headers to collect: their names together (+1 each) */
+#endif
+#ifndef FN_HDR_VALUES
+#define FN_HDR_VALUES 192       /* their values together (+2 each), at most 250 */
+#endif
+#define FN_REDIRECTS  10        /* as the FujiNet firmware */
+#endif
+#define FN_HOST       64        /* host name */
+
 typedef struct {
     uint8_t sock;               /* M4 socket, 0 = unit not open */
     uint8_t closed;             /* the other side closed the connection (or it failed) */
@@ -39,6 +56,13 @@ typedef struct {
     uint8_t err;                /* NETWORK_SUCCESS, or the error from the HTTP status */
     uint8_t first;              /* response head: the status line is still to come */
     uint8_t skip;               /* response head: inside a line longer than the buffer */
+#ifndef FN_NO_HTTP
+    uint8_t putw;               /* OPEN_MODE_HTTP_PUT: writes in body mode are the PUT data */
+    uint8_t redir;              /* response head: a redirect that is followed */
+    uint8_t redirs;             /* redirects followed so far */
+    uint16_t port;
+    char host[FN_HOST];
+#endif
     uint16_t start, len;        /* buffered bytes: rx[start .. start+len) */
     uint8_t rx[FN_RXBUF];
 } Unit;
@@ -124,6 +148,109 @@ static void out_u(uint16_t v)
         out_c(d[--i]);
 }
 
+/* ---- response headers to collect ------------------------------------------------------ */
+
+static Unit *hdr_unit;                  /* the unit that collects, 0 = none */
+static char hdr_names[FN_HDR_NAMES];    /* the names, lower case, each 0-terminated */
+static uint8_t hdr_nlen, hdr_count;
+static uint8_t hdr_vals[FN_HDR_VALUES]; /* the values found: index, length, bytes */
+static uint8_t hdr_vlen, hdr_cursor;    /* hdr_cursor: the next value to read */
+static char loc[128];                   /* the Location of a redirect */
+
+static uint8_t lower(uint8_t c)
+{
+    return c >= 'A' && c <= 'Z' ? c + 32 : c;
+}
+
+/* a header name to collect (one write, a trailing CR/LF/ATASCII EOL is dropped) */
+static FN_ERR add_name(Unit *u, const uint8_t *buf, uint16_t len)
+{
+    if (hdr_unit != u) {
+        if (hdr_unit)                   /* another unit collects */
+            return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_COULD_NOT_ALLOCATE_BUFFERS);
+        hdr_unit = u;
+        hdr_nlen = hdr_count = hdr_vlen = hdr_cursor = 0;
+    }
+    while (len && (buf[len - 1] == '\r' || buf[len - 1] == '\n' || buf[len - 1] == 0x9B))
+        --len;
+    if (!len || memchr(buf, ':', len))
+        return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_COMMAND);
+    if (len >= FN_HDR_NAMES - hdr_nlen)
+        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_COULD_NOT_ALLOCATE_BUFFERS);
+    while (len--)
+        hdr_names[hdr_nlen++] = lower(*buf++);
+    hdr_names[hdr_nlen++] = 0;
+    ++hdr_count;
+    return FN_ERR_OK;
+}
+
+/* where the value of collected header i is in hdr_vals (index, length, bytes), or 255 if it
+   was not in the response */
+static uint8_t hdr_find(uint8_t i)
+{
+    uint8_t j;
+
+    for (j = 0; j < hdr_vlen; j += 2 + hdr_vals[j + 1])
+        if (hdr_vals[j] == i)
+            return j;
+    return 255;
+}
+
+/* the index of name (n bytes, any case) among the names to collect, or 255 */
+static uint8_t hdr_index(const uint8_t *name, uint16_t n)
+{
+    const char *p = hdr_names;
+    uint8_t i;
+    uint16_t k;
+
+    for (i = 0; i < hdr_count; ++i, p += strlen(p) + 1) {
+        for (k = 0; k < n && p[k] && lower(name[k]) == p[k]; ++k)
+            ;
+        if (k == n && !p[k])
+            return i;
+    }
+    return 255;
+}
+
+/* a response header line "Name: value" (n bytes): a collected one is stored, a redirect's
+   Location kept */
+static void head_line(Unit *u, const uint8_t *b, uint16_t n)
+{
+    uint16_t c, v;
+    uint8_t i;
+
+    for (c = 0; c < n && b[c] != ':'; ++c)
+        ;
+    if (c == n)
+        return;
+    for (v = c + 1; v < n && (b[v] == ' ' || b[v] == '\t'); ++v)
+        ;
+    while (n > v && (b[n - 1] == ' ' || b[n - 1] == '\t'))
+        --n;
+    n -= v;                             /* the value: b[v .. v+n) */
+    if (u->redir) {
+        for (i = 0; i < 8 && lower(b[i]) == "location"[i]; ++i)
+            ;
+        if (i == 8 && c == 8) {
+            if (n >= sizeof loc)
+                n = 0;                  /* too long: not followed */
+            memcpy(loc, b + v, n);
+            loc[n] = 0;
+        }
+        return;
+    }
+    if (u != hdr_unit || (i = hdr_index(b, c)) == 255 || hdr_find(i) != 255)
+        return;                         /* not asked for, or seen before (the first one counts) */
+    if (hdr_vlen + 2 > FN_HDR_VALUES)
+        return;                         /* no room: as if it was not there */
+    if (n > FN_HDR_VALUES - 2 - hdr_vlen)
+        n = FN_HDR_VALUES - 2 - hdr_vlen;       /* cut to what fits (may be nothing) */
+    hdr_vals[hdr_vlen] = i;
+    hdr_vals[hdr_vlen + 1] = (uint8_t)n;
+    memcpy(hdr_vals + hdr_vlen + 2, b + v, n);
+    hdr_vlen += 2 + n;
+}
+
 /* ---- HTTP response -------------------------------------------------------------------- */
 
 /* the device error for an HTTP status code, as the FujiNet firmware maps it */
@@ -179,8 +306,15 @@ static void head(Unit *u)
             for (++j, code = 0; j < n && b[j] >= '0' && b[j] <= '9'; ++j)
                 code = code * 10 + (b[j] - '0');
             u->err = http_error(code);
+            if ((code == 301 || code == 302) && (u->method == M_GET || u->method == M_DELETE)
+                && u->redirs < FN_REDIRECTS) {
+                u->redir = 1;           /* followed at the end of the head (redirect) */
+                loc[0] = 0;
+            }
         } else if (n == 0)
             u->state = H_BODY;
+        else
+            head_line(u, b, n);
         ++nl;                           /* the line and its '\n' */
         u->start += nl;
         u->len -= nl;
@@ -204,11 +338,13 @@ static uint8_t finish_request(Unit *u, const uint8_t *data, uint16_t len)
     if (len && !txerr && m4_send(u->sock, data, len) != 0)
         txerr = 1;
     u->start = u->len = 0;              /* the POST data may have been in rx */
-    u->chan = HTTP_CHAN_MODE_BODY;
     u->state = H_HEAD;
     u->first = 1;
     u->skip = 0;
+    u->redir = 0;
     u->err = NETWORK_SUCCESS;
+    if (u == hdr_unit)                  /* values of an earlier response (a redirect) */
+        hdr_vlen = hdr_cursor = 0;
     if (txerr) {
         u->closed = 1;
         u->state = H_BODY;
@@ -217,15 +353,86 @@ static uint8_t finish_request(Unit *u, const uint8_t *data, uint16_t len)
     return txerr;
 }
 
-/* HTTP: the request goes out with the first status/read in body mode */
-static void start_response(Unit *u)
+/* HTTP: the request goes out with the first status/read in body or get-headers mode - for
+   OPEN_MODE_HTTP_PUT with the first read only (or at close), as the data is still written */
+static void start_response(Unit *u, uint8_t reading)
 {
-    if (u->state == H_REQUEST && u->chan == HTTP_CHAN_MODE_BODY)
+    if (u->state == H_REQUEST && (reading || !u->putw)
+        && (u->chan == HTTP_CHAN_MODE_BODY || u->chan == HTTP_CHAN_MODE_GET_HEADERS))
         finish_request(u, u->rx, u->len);
 }
 
+/* the request line and the standard headers. 0 = sent */
+static uint8_t request_head(uint8_t s, uint8_t method, const char *host, uint16_t port, const char *path)
+{
+    static const char *const names[] = { "", "GET ", "POST ", "PUT ", "DELETE " };
+
+    txsock = s;
+    txerr = 0;
+    out_s(names[method]);
+    if (!*path)
+        out_c('/');
+    for (; *path; ++path)
+        if (*path == ' ')
+            out_s("%20");
+        else
+            out_c(*path);
+    out_s(" HTTP/1.0\r\nHost: ");
+    out_s(host);
+    if (port != 80) {
+        out_c(':');
+        out_u(port);
+    }
+    out_s("\r\nUser-Agent: fujinet-network-cpc\r\nConnection: close\r\n");
+    out_flush();
+    return txerr;
+}
+
+static uint8_t prefix(const char *s, const char *pre);
+static const char *host_port(const char *p, char *host, uint16_t *port);
+static uint8_t connect_to(const char *host, uint16_t port);
+
+/* follows a redirect: the same request to loc ("http://host[:port]/path" or "/path" on the
+   same server). Headers added by the program are not sent again. A Location that can't be
+   followed (none, too long, https://, a relative path) leaves the 3xx response to be read,
+   with error 144 - as when there were too many. */
+static void redirect(Unit *u)
+{
+    const char *p = loc;
+    char host[FN_HOST];
+    uint16_t port = u->port;
+    uint8_t s, i;
+
+    u->redir = 0;
+    strcpy(host, u->host);
+    if ((i = prefix(p, "http://")) != 0) {
+        p += i;                         /* before port = 80: SDCC 4.5.0 computed p + 80 here */
+        port = 80;
+        p = host_port(p, host, &port);
+    } else if (*p != '/')
+        p = 0;
+    if (!p)
+        return;
+    ++u->redirs;
+    m4_close(u->sock);
+    u->start = u->len = 0;
+    if ((s = connect_to(host, port)) != 0) {
+        u->sock = s;
+        u->port = port;
+        strcpy(u->host, host);
+        if (request_head(s, u->method, host, port, p) == 0) {
+            finish_request(u, 0, 0);
+            return;
+        }
+    }
+    u->sock = M4_ERROR;                 /* the unit stays open, without a socket */
+    u->closed = 1;
+    u->state = H_BODY;
+    u->err = NETWORK_ERROR_GENERAL;
+}
+
 #else
-#define start_response(u)
+#define start_response(u, reading)
 #endif /* FN_NO_HTTP */
 
 /* ---- receiving ------------------------------------------------------------------------ */
@@ -258,21 +465,42 @@ static void fill(Unit *u)
 #ifndef FN_NO_HTTP
         if (u->state == H_HEAD)
             head(u);
-    } while (u->state == H_HEAD && r > 0);
+        if (u->redir && u->state == H_BODY)     /* the head of a redirect is complete */
+            redirect(u);
+    } while (u->state == H_HEAD && (r > 0 || u->redir));   /* a redirect: waits for its head */
     if (u->state == H_HEAD && u->closed) {      /* closed before the end of the head */
         u->state = H_BODY;
         u->start = u->len = 0;
-        if (u->first)
+        if (u->first || u->redir)
             u->err = NETWORK_ERROR_GENERAL;
+        u->redir = 0;
     }
 #endif
 }
 
 #ifndef FN_NO_HTTP
-/* bytes the program can read: the body only */
+/* HTTP: waits for the end of the response head */
+static void wait_head(Unit *u)
+{
+    while (u->state == H_HEAD)
+        fill(u);
+}
+
+/* bytes the program can read: the body only - in get-headers mode the next collected value
+   with its ATASCII EOL */
 static uint16_t avail(const Unit *u)
 {
-    return u->state == H_REQUEST || u->state == H_HEAD ? 0 : u->len;
+    uint8_t j;
+
+    if (u->state == H_REQUEST || u->state == H_HEAD)
+        return 0;
+    if (u->chan == HTTP_CHAN_MODE_GET_HEADERS) {
+        if (u != hdr_unit || hdr_cursor >= hdr_count)
+            return 0;
+        j = hdr_find(hdr_cursor);
+        return j == 255 ? 1 : hdr_vals[j + 1] + 1;
+    }
+    return u->len;
 }
 #else
 #define avail(u) ((u)->len)
@@ -285,10 +513,14 @@ static void set_status(const Unit *u)
     nw_status.avail = n;
     nw_status.status = !u->closed;
 #ifndef FN_NO_HTTP
+    if (u->chan == HTTP_CHAN_MODE_GET_HEADERS)
+        nw_status.status = 0;           /* as the FujiNet: "so that we always ask" */
     if (u->state == H_REQUEST || u->state == H_HEAD)
         nw_status.errcode = NETWORK_SUCCESS;
     else if (u->err != NETWORK_SUCCESS)
         nw_status.errcode = u->err;     /* HTTP error status: stays, as on the FujiNet */
+    else if (u->chan == HTTP_CHAN_MODE_GET_HEADERS)
+        nw_status.errcode = n ? NETWORK_SUCCESS : NETWORK_ERROR_END_OF_FILE;
     else
 #endif
         nw_status.errcode = u->closed && !n ? NETWORK_ERROR_END_OF_FILE : NETWORK_SUCCESS;
@@ -296,10 +528,12 @@ static void set_status(const Unit *u)
 
 /* ---- open/close ----------------------------------------------------------------------- */
 
+#ifdef FN_NO_HTTP
 static uint8_t lower(uint8_t c)
 {
     return c >= 'A' && c <= 'Z' ? c + 32 : c;
 }
+#endif
 
 /* length of a case-insensitive prefix of s, or 0 */
 static uint8_t prefix(const char *s, const char *pre)
@@ -331,6 +565,47 @@ static uint8_t parse_ip(const char *s, uint8_t *ip)
     return *s == 0;
 }
 
+/* "host[:port][/path]": the host (FN_HOST bytes), the port if there is one; returns the path
+   ("" or "/..."), 0 if it is not like that */
+static const char *host_port(const char *p, char *host, uint16_t *port)
+{
+    uint8_t i;
+
+    for (i = 0; *p && *p != ':' && *p != '/'; ++p) {
+        if (i == FN_HOST - 1)
+            return 0;
+        host[i++] = *p;
+    }
+    host[i] = 0;
+    if (i == 0)                         /* listening (no host) not supported */
+        return 0;
+    if (*p == ':') {
+        if (*++p < '0' || *p > '9')
+            return 0;
+        for (*port = 0; *p >= '0' && *p <= '9'; ++p)
+            *port = *port * 10 + (*p - '0');
+    }
+    return *p && *p != '/' ? 0 : p;
+}
+
+/* a connected M4 socket, or 0 (nw_status says why) */
+static uint8_t connect_to(const char *host, uint16_t port)
+{
+    uint8_t ip[4], s, code;
+
+    if (!parse_ip(host, ip) && m4_dns(host, ip) != 0)
+        code = NETWORK_ERROR_NETWORK_UNREACHABLE;
+    else if ((s = m4_socket()) == M4_ERROR || s == 0)
+        code = NETWORK_ERROR_NO_DEVICE_AVAILABLE;
+    else if (m4_connect(s, ip, port) != 0) {
+        m4_close(s);
+        code = NETWORK_ERROR_CONNECTION_REFUSED;
+    } else
+        return s;
+    fail(FN_ERR_IO_ERROR, code);
+    return 0;
+}
+
 #ifndef FN_NO_HTTP
 /* the HTTP method of an open mode, or M_TCP when not supported */
 static uint8_t http_method(uint8_t mode)
@@ -341,6 +616,7 @@ static uint8_t http_method(uint8_t mode)
         return M_GET;
     case OPEN_MODE_HTTP_POST:
         return M_POST;
+    case OPEN_MODE_HTTP_PUT:
     case OPEN_MODE_HTTP_PUT_H:
         return M_PUT;
     case OPEN_MODE_HTTP_DELETE:
@@ -353,11 +629,8 @@ static uint8_t http_method(uint8_t mode)
 
 FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
 {
-#ifndef FN_NO_HTTP
-    static const char *const names[] = { "", "GET ", "POST ", "PUT ", "DELETE " };
-#endif
-    char host[64];
-    uint8_t ip[4], n, i, s, method;
+    char host[FN_HOST];
+    uint8_t n, i, s, method;
     uint16_t port;
     const char *p;
     Unit *u;
@@ -371,6 +644,7 @@ FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
 
     p = strchr(devicespec, ':') + 1;
+    port = 0;                           /* TCP needs a port */
     if ((i = prefix(p, "tcp://")) != 0) {
         if (mode != OPEN_MODE_READ && mode != OPEN_MODE_WRITE && mode != OPEN_MODE_RW)
             return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
@@ -379,82 +653,34 @@ FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
     } else if ((i = prefix(p, "http://")) != 0) {
         if ((method = http_method(mode)) == M_TCP)
             return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
+        port = 80;                      /* HTTP has 80 */
 #endif
     } else                              /* HTTPS, UDP, TNFS, ... */
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
-    p += i;
-
-    for (i = 0; *p && *p != ':' && *p != '/'; ++p) {
-        if (i == sizeof host - 1)
-            return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-        host[i++] = *p;
-    }
-    host[i] = 0;
-    if (i == 0)                         /* listening (no host) not supported */
-        return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-    port = 80;
-    if (*p == ':') {
-        if (*++p < '0' || *p > '9')
-            return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-        for (port = 0; *p >= '0' && *p <= '9'; ++p)
-            port = port * 10 + (*p - '0');
-    }
-#ifndef FN_NO_HTTP
-    else if (method == M_TCP)           /* TCP needs a port, HTTP has 80 */
-#else
-    else
-#endif
-        return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-    if (*p && *p != '/')
+    if ((p = host_port(p + i, host, &port)) == 0 || port == 0)
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
 
     network_close(devicespec);
-    if (!parse_ip(host, ip) && m4_dns(host, ip) != 0)
-        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_NETWORK_UNREACHABLE);
-    s = m4_socket();
-    if (s == M4_ERROR || s == 0)
-        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_NO_DEVICE_AVAILABLE);
-    if (m4_connect(s, ip, port) != 0) {
-        m4_close(s);
-        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_CONNECTION_REFUSED);
-    }
-
-#ifndef FN_NO_HTTP
-    if (method != M_TCP) {              /* request line and standard headers */
-        txsock = s;
-        txerr = 0;
-        out_s(names[method]);
-        if (!*p)
-            out_c('/');
-        for (; *p; ++p)
-            if (*p == ' ')
-                out_s("%20");
-            else
-                out_c(*p);
-        out_s(" HTTP/1.0\r\nHost: ");
-        out_s(host);
-        if (port != 80) {
-            out_c(':');
-            out_u(port);
-        }
-        out_s("\r\nUser-Agent: fujinet-network-cpc\r\nConnection: close\r\n");
-        out_flush();
-        if (txerr) {
-            m4_close(s);
-            return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_GENERAL);
-        }
-    }
-#endif
+    if ((s = connect_to(host, port)) == 0)
+        return FN_ERR_IO_ERROR;
 
     u = &units[n - 1];
-    u->sock = s;
-    u->closed = 0;
-    u->method = method;
 #ifndef FN_NO_HTTP
+    if (method != M_TCP && request_head(s, method, host, port, p) != 0) {
+        m4_close(s);
+        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_GENERAL);
+    }
     u->state = method == M_TCP ? H_NONE : H_REQUEST;
+    u->putw = mode == OPEN_MODE_HTTP_PUT && method == M_PUT;
+    u->redir = u->redirs = 0;
+    u->port = port;
+    strcpy(u->host, host);
 #else
     u->state = H_NONE;
 #endif
+    u->sock = s;
+    u->closed = 0;
+    u->method = method;
     u->chan = HTTP_CHAN_MODE_BODY;
     u->err = NETWORK_SUCCESS;
     u->start = u->len = 0;
@@ -462,17 +688,32 @@ FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
     return FN_ERR_OK;
 }
 
+/* OPEN_MODE_HTTP_PUT: the PUT goes out here if no read sent it; an HTTP error is returned */
 FN_ERR network_close(const char *devicespec)
 {
     uint8_t n = network_unit(devicespec);
+    FN_ERR e = FN_ERR_OK;
+    Unit *u;
 
     if (n == 0 || n > UNITS)
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
-    if (units[n - 1].sock) {
-        m4_close(units[n - 1].sock);
-        units[n - 1].sock = 0;
+    u = &units[n - 1];
+    if (u->sock) {
+#ifndef FN_NO_HTTP
+        if (u->putw && u->state == H_REQUEST) {
+            finish_request(u, u->rx, u->len);
+            wait_head(u);
+            if (u->err != NETWORK_SUCCESS)
+                e = fail(FN_ERR_IO_ERROR, u->err);
+        }
+        if (u == hdr_unit)
+            hdr_unit = 0;
+        if (u->sock != M4_ERROR)        /* M4_ERROR: a redirect that failed */
+#endif
+            m4_close(u->sock);
+        u->sock = 0;
     }
-    return FN_ERR_OK;
+    return e;
 }
 
 /* ---- status, read, write -------------------------------------------------------------- */
@@ -483,7 +724,11 @@ FN_ERR network_status(const char *devicespec, uint16_t *bw, uint8_t *c, uint8_t 
     FN_ERR e = FN_ERR_IO_ERROR;
 
     if (u) {
-        start_response(u);
+        start_response(u, 0);
+#ifndef FN_NO_HTTP
+        if (u->chan == HTTP_CHAN_MODE_GET_HEADERS)
+            wait_head(u);               /* the FujiNet has the response by now too */
+#endif
         fill(u);
         set_status(u);
         e = FN_ERR_OK;
@@ -516,7 +761,7 @@ static Unit *read_unit(const char *devicespec)
 
 #ifndef FN_NO_HTTP
     if (u) {
-        start_response(u);
+        start_response(u, 1);
         if (u->state == H_REQUEST) {    /* still adding headers or POST data */
             fail(FN_ERR_IO_ERROR, NETWORK_ERROR_WRITE_ONLY);
             return 0;
@@ -525,6 +770,32 @@ static Unit *read_unit(const char *devicespec)
 #endif
     return u;
 }
+
+#ifndef FN_NO_HTTP
+/* get-headers mode: the next collected value with an ATASCII EOL (one value per read, as on
+   the FujiNet; a value longer than len is cut). An absent header is the EOL alone. */
+static int16_t read_header(Unit *u, uint8_t *buf, uint16_t len)
+{
+    uint16_t n;
+    uint8_t j;
+
+    wait_head(u);
+    n = avail(u);
+    if (len > n)
+        len = n;
+    if (n) {
+        j = hdr_find(hdr_cursor++);
+        memcpy(buf, hdr_vals + j + 2, len < n ? len : n - 1);
+        if (len == n)
+            buf[n - 1] = 0x9B;
+    }
+    set_status(u);
+    return (int16_t)len;
+}
+#define HEADERS(u, buf, len) if (u->chan == HTTP_CHAN_MODE_GET_HEADERS) return read_header(u, buf, len)
+#else
+#define HEADERS(u, buf, len)
+#endif
 
 int16_t network_read_nb(const char *devicespec, void *buf, uint16_t len)
 {
@@ -535,6 +806,7 @@ int16_t network_read_nb(const char *devicespec, void *buf, uint16_t len)
         return -(int16_t)FN_ERR_IO_ERROR;
     if (len > 0x7FFF)
         len = 0x7FFF;
+    HEADERS(u, buf, len);
     do
         fill(u);
     while (!avail(u) && !u->closed);
@@ -552,6 +824,7 @@ int16_t network_read(const char *devicespec, void *buf, uint16_t len)
         return -(int16_t)FN_ERR_IO_ERROR;
     if (len > 0x7FFF)
         len = 0x7FFF;
+    HEADERS(u, buf, len);
     while (got < len) {
         fill(u);
         if (!avail(u) && u->closed)
@@ -598,7 +871,10 @@ FN_ERR network_write(const char *devicespec, const void *buf, uint16_t len)
             return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_READ_ONLY);
         if (u->chan == HTTP_CHAN_MODE_SET_HEADERS)
             return add_header(u, buf, len);
-        if (u->chan == HTTP_CHAN_MODE_POST_SET_DATA && (u->method == M_POST || u->method == M_PUT))
+        if (u->chan == HTTP_CHAN_MODE_COLLECT_HEADERS)
+            return add_name(u, buf, len);
+        if ((u->chan == HTTP_CHAN_MODE_POST_SET_DATA && (u->method == M_POST || u->method == M_PUT))
+            || (u->chan == HTTP_CHAN_MODE_BODY && u->putw))
             return add_data(u, buf, len);
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_COMMAND);
     }
@@ -622,13 +898,18 @@ FN_ERR network_http_set_channel_mode(const char *devicespec, uint8_t mode)
     switch (mode) {
     case HTTP_CHAN_MODE_BODY:
         break;
+    case HTTP_CHAN_MODE_GET_HEADERS:    /* the collected values from the first one on */
+        if (u == hdr_unit)
+            hdr_cursor = 0;
+        break;
     case HTTP_CHAN_MODE_SET_HEADERS:
+    case HTTP_CHAN_MODE_COLLECT_HEADERS:
     case HTTP_CHAN_MODE_POST_SET_DATA:
         if (u->state != H_REQUEST)      /* too late: the request is out */
             return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_READ_ONLY);
         break;
-    default:                            /* collecting response headers: not yet */
-        return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
+    default:
+        return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_COMMAND);
     }
     u->chan = mode;
     return FN_ERR_OK;

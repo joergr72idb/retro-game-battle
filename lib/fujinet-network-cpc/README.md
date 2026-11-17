@@ -41,7 +41,9 @@ Own code with the same names, constants and behaviour - no fujinet-lib code.
 | HTTP methods | GET (`OPEN_MODE_HTTP_GET`, `_GET_H`), POST (`_POST`), PUT (`_PUT_H`), DELETE (`_DELETE`, `_DELETE_H`, `network_http_delete`) |
 | `network_http_post`, `network_http_post_bin`, `network_http_put` | send the request with its data, any length |
 | `network_http_start_add_headers`, `network_http_add_header`, `network_http_end_add_headers` | request headers |
-| `network_http_set_channel_mode` | `HTTP_CHAN_MODE_BODY`, `_SET_HEADERS`, `_POST_SET_DATA` (data written in pieces: up to 256 bytes) |
+| `network_http_set_channel_mode` | `HTTP_CHAN_MODE_BODY`, `_SET_HEADERS`, `_POST_SET_DATA` (data written in pieces: up to 256 bytes), `_COLLECT_HEADERS`, `_GET_HEADERS` (response headers) |
+| `OPEN_MODE_HTTP_PUT` | PUT of everything written (up to 256 bytes), sent with the first read or at close |
+| Redirects | 301 and 302 for GET and DELETE, up to 10, to `http://...` or a path on the same server |
 
 Units `N1:`-`N4:` (`N:` = `N1:`), the M4's four sockets.
 
@@ -49,29 +51,55 @@ HTTP behaves as on the FujiNet: the request goes out with the first `network_sta
 (until then headers and POST data can be added), an HTTP error shows as the `err` of
 `network_status` (404 = 170, 401/403 = 212, 5xx = 215, ...) and its body can still be read.
 It is plain HTTP/1.0 with `Connection: close`: the M4 has no TLS, so **no HTTPS**. Redirects
-are not followed (3xx = error 144), spaces in the path are sent as `%20`, the response headers
-are skipped. One difference: `OPEN_MODE_HTTP_PUT_H` sends a real PUT, as its documentation says - the
-FujiNet firmware (2026) sends a POST for it.
+are followed as by the FujiNet firmware: 301 and 302, up to 10 (the 11th comes back as error 144
+with its body). Spaces in the path are sent as `%20`.
 
-**Not yet:** HTTPS, reading response headers (`HTTP_CHAN_MODE_COLLECT_HEADERS`/`_GET_HEADERS`),
-PUT of everything written until close (`OPEN_MODE_HTTP_PUT`), other protocols (TNFS, FTP, ...),
-listening for connections, UDP, translation modes other than `OPEN_TRANS_NONE`, JSON. They
-return `FN_ERR_BAD_CMD` (or `FN_ERR_IO_ERROR`) with `fn_network_error` = 146 (not implemented).
+Response headers work as on the FujiNet:
 
-Size: HTTP costs about 2.9 KB. A program that only needs TCP compiles the library with
-`-DFN_NO_HTTP` (`make NO_HTTP=1` here): HTTP opens then return "not implemented" as before, and
-the `network_http_*` functions are left out, so a program that uses them does not link.
-Retro Game Battle's CPC client `RGBTCP.BIN`: 11.9 KB with HTTP, 9.1 KB with `-DFN_NO_HTTP`.
+```c
+network_open("N1:HTTP://example.org/", OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+network_http_set_channel_mode("N1:", HTTP_CHAN_MODE_COLLECT_HEADERS);
+network_write("N1:", "Content-Type", 12);             /* one name per write */
+network_http_set_channel_mode("N1:", HTTP_CHAN_MODE_GET_HEADERS);
+network_status("N1:", &waiting, &connected, &err);   /* sends the request; waiting = 10 + 1 */
+network_read("N1:", buf, waiting);                   /* "text/html" and 0x9B */
+network_http_set_channel_mode("N1:", HTTP_CHAN_MODE_BODY);   /* then the body as usual */
+```
 
-## Status (2026-11-16)
+Differences from the FujiNet firmware (2026):
+- `OPEN_MODE_HTTP_PUT_H` sends a real PUT, as its documentation says; the firmware sends a POST.
+- Response header values come in the order the names were written; the firmware's order is that
+  of its internal map. A header that comes twice: the first one counts.
+- A redirect to a path (`Location: /new`) is followed on the PC too (the FujiNet-PC firmware
+  only follows full URLs). POST and PUT are not redirected (error 144 with the 3xx body): their
+  data is not kept. Headers added by the program are not sent again to the new location.
+- Limits from the CPC's memory: PUT data and data written in `_POST_SET_DATA` up to 256 bytes
+  per unit (`network_http_post_bin` sends any length), response header names up to 64 bytes and
+  values up to 192 bytes together, one unit at a time collecting response headers
+  (`FN_HDR_NAMES`, `FN_HDR_VALUES`, `FN_RXBUF` when compiling the library).
+- An empty `OPEN_MODE_HTTP_PUT` is sent (`Content-Length: 0`); the firmware sends nothing.
 
-Development is **paused**; it will be continued later. Issues and ideas are welcome meanwhile.
+**Not yet:** HTTPS, other protocols (TNFS, FTP, ...), listening for connections, UDP,
+translation modes other than `OPEN_TRANS_NONE`, JSON. They return `FN_ERR_BAD_CMD` (or
+`FN_ERR_IO_ERROR`) with `fn_network_error` = 146 (not implemented).
+
+Size: HTTP costs about 5.5 KB of code and 0.7 KB of data. A program that only needs TCP compiles
+the library with `-DFN_NO_HTTP` (`make NO_HTTP=1` here): HTTP opens then return "not implemented"
+as before, and the `network_http_*` functions are left out, so a program that uses them does not
+link. The library is then 2.2 KB of code and 1.1 KB of data (most of it the 4 receive buffers);
+Retro Game Battle's CPC client `RGBTCP.BIN` is 9.1 KB with `-DFN_NO_HTTP`.
+
+## Status (2026-11-17)
+
+Development continues. Issues and ideas are welcome.
 
 **Done**
 - TCP client: open (host name or a.b.c.d), status, read (blocking and non-blocking), write, close,
   units `N1:`-`N4:` - the calls Retro Game Battle's CPC client needs.
 - HTTP client (plain HTTP/1.0): GET, POST (text, in pieces, binary), PUT, DELETE, request headers,
   HTTP errors as FujiNet error codes, body of an error response readable.
+- Response headers (`HTTP_CHAN_MODE_COLLECT_HEADERS` / `_GET_HEADERS`), redirects (301/302),
+  `OPEN_MODE_HTTP_PUT` (2026-11-17).
 - TCP-only build (`-DFN_NO_HTTP`, 2.9 KB smaller), used by Retro Game Battle.
 - Test program against a local test server (`make test`, both variants) - in the emulator.
 
@@ -80,9 +108,6 @@ Development is **paused**; it will be continued later. Issues and ideas are welc
 | | Note |
 |---|---|
 | Real CPC + M4 | everything so far runs only in the emulator (CPCSyntaxError with M4 emulation) |
-| Response headers | `HTTP_CHAN_MODE_COLLECT_HEADERS` / `_GET_HEADERS` - the headers arrive already, they are skipped |
-| Redirects | follow 3xx `Location` instead of returning error 144 |
-| `OPEN_MODE_HTTP_PUT` | PUT of everything written until close |
 | UDP | depends on what the M4 firmware offers - to be checked |
 | Listening (TCP server) | the same; needed for e.g. a BBS on the CPC |
 | TNFS | FujiNet's file protocol, runs over UDP - after UDP |
@@ -108,7 +133,11 @@ data, a host name, two units at once, re-opening a unit, a refused connection, a
 and bad devicespecs. HTTP (against an HTTP server in `test/testserver.py`, port 6512): a
 3000-byte GET through the 256-byte buffer with a 400-byte response header line, a request
 header, a 404 with its body, POST as text, in pieces and as 1000 bytes of binary data, PUT,
-DELETE, a path with a space, and the unsupported parts (HTTPS, response headers).
+DELETE, a path with a space; redirects (to another host name, to a path, for DELETE, and not
+followed: more than 10, to https, for POST); response headers collected through a redirect
+(order, case, an EOL after the name, a missing one, a second unit refused, read again, then the
+body); `OPEN_MODE_HTTP_PUT` sent by a read and by the close (with an HTTP error from the close);
+and HTTPS (not supported).
 
 ## Used by
 
@@ -116,10 +145,14 @@ DELETE, a path with a space, and the unsupported parts (HTTPS, response headers)
   protocol code (`clients/common/rgb_core.c`) with the Atari, C64 and Apple II clients, which use
   fujinet-lib. Retro Game Battle carries this library as a git subtree in `lib/fujinet-network-cpc`.
 
-## Tested (2026-11-15, emulator only)
+## Tested (2026-11-17, emulator only)
 
-CPCSyntaxError (the kit's, with M4 emulation) on Ubuntu 26.04: `make test` passes. Not yet on a
-real CPC + M4.
+CPCSyntaxError (the kit's, with M4 emulation) on Ubuntu 26.04 and Debian 13: `make test` passes
+(both variants). Not yet on a real CPC + M4.
+
+Note for SDCC 4.5.0: it can mix up registers in some expressions (seen: `p + i` computed as
+`p + 80` after `port = 80`, and `return f(), 0;` losing what `f` set). Where it happened the
+code is written around it, with a comment.
 
 ## Next goal: a FujiNet for the Schneider CPC
 
