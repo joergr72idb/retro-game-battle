@@ -68,9 +68,12 @@ fujinet: | build
 # every key). JOY=1: joystick 0 = cursor keys, fire = Space (atari800.cfg SDL2_JOY_0_*).
 JOY       ?= 0
 KBDJOY    := $(if $(filter 1,$(JOY)),-kbdjoy0 -no-kbdjoy1,-no-kbdjoy0 -no-kbdjoy1)
+# atari800.cfg pins the XL OS to rev. 2 (rom/REV02.ROM, not in git). Without that file atari800 does
+# not fall back by itself (it doesn't check that a configured ROM exists): use the built-in AltirraOS.
+XLREV     := $(if $(wildcard $(DEV)/rom/REV02.ROM),,-xl-rev altirra)
 
 run: $(XEX) fujinet
-	$(ATARI800) -config atari800.cfg $(KBDJOY) -xl -netsio $(NETSIO_PORT) -run $(XEX)
+	$(ATARI800) -config atari800.cfg $(KBDJOY) -xl $(XLREV) -netsio $(NETSIO_PORT) -run $(XEX)
 
 # headless: no window or sound, input from a playback file (atari800 quits at its end), the screen
 # recorded as video and its last frame saved. A new atari800 never links to a FujiNet-PC that is
@@ -85,7 +88,7 @@ shot: $(XEX) | build
 	@$(MAKE) -s stop
 	@$(MAKE) -s fujinet
 	rm -f build/shot.avi build/shot.png
-	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $(ATARI800) -config atari800.cfg -no-kbdjoy0 -no-kbdjoy1 -xl \
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $(ATARI800) -config atari800.cfg -no-kbdjoy0 -no-kbdjoy1 -xl $(XLREV) \
 	  -netsio $(NETSIO_PORT) -playback build/shot.playback -record-video -vname build/shot.avi \
 	  -run $(XEX) > build/logs/shot.log 2>&1 < /dev/null || true
 	@$(MAKE) -s stop
