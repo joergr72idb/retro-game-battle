@@ -14,7 +14,7 @@ carries a `Co-Authored-By: Claude` line. The tools it builds are other people's 
 | [RASM](https://github.com/EdouardBERGE/rasm) | 3.3.3 | Z80 assembler, writes AMSDOS files directly |
 | [iDSK](https://github.com/cpcsdk/idsk) | 0.20 | Creates `.dsk` disc images |
 | [CPCSyntaxError](https://github.com/WacKEDmaN/CPCSyntaxError) | 0.16.0 | Emulator (MIT) with M4 board: SD card = a Mac folder, WiFi = the Mac's network, `\|HTTPGET`/`\|HTTPMEM`, TCP sockets. Includes the CPC ROMs and Duke's M4 ROM |
-| `lib/m4` | ours | C library for the M4: HTTP into memory, TCP client sockets, DNS |
+| `lib/m4` | ours | C library for the M4: HTTP into memory, TCP client and server sockets, DNS |
 | `lib/cpc` | ours | SDCC startup code (`crt0.s`), `printf` and keyboard through the CPC firmware |
 | [fujinet-network-cpc](https://github.com/joergr72idb/fujinet-network-cpc) | aef3b77, **optional** | FujiNet's fujinet-lib network API (`network_open`, `network_read`, ... TCP and HTTP) on the M4. GPL-3.0-or-later |
 
@@ -148,6 +148,8 @@ m4_dns("example.com", ip);                         /* ip = {a, b, c, d} */
 s = m4_socket(); m4_connect(s, ip, port);          /* TCP client, sockets 1-4 */
 m4_send(s, data, len); n = m4_recv(s, buf, max);   /* recv: 0 = nothing yet, -1 = closed */
 m4_close(s);
+s = m4_socket(); m4_listen(s, port);               /* TCP server: one client; status M4_ACCEPTING */
+                                                   /* until it comes, then s is that connection */
 ```
 
 It follows Duke's documented command interface ([m4info.txt](http://www.spinpoint.org/cpc/m4info.txt)):
