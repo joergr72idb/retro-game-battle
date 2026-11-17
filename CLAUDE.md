@@ -236,6 +236,11 @@ any client in the future.
   `git subtree pull --prefix=lib/fujinet-network-cpc <repo> main --squash`.
   Last update 2026-11-17 (bbacc5e+: response headers, redirects, OPEN_MODE_HTTP_PUT - only the shared
   parsing code reaches the TCP-only client, RGBTCP.BIN 9259 bytes): `tools/handsfree_test.sh cpc` and `--b2b cpc` PASS.
+  Then acbf917 (TCP server, needs the kit's `m4_listen` - update `devkits/development-kit-cpc-and-m4` together
+  with the library, or the client does not link): RGBTCP.BIN 9863 bytes, `cpc` PASS, `--b2b cpc` PASS 3 of 3.
+- `--b2b cpc` is flaky (old and new library alike, 2026-11-17): when the bot drives into a wall within
+  seconds, match 2 ends before the CPC's scripted moves are due - "moves in match 2 0" with the CPC as
+  winner in server.log. Not a client bug; rerun.
 - Licence: GPL-3.0-or-later since 2026-11-15 (was MIT; the Atari/C64/Apple II binaries link
   fujinet-lib, which is GPL-3) - reason in the README. `devkits/` stay MIT (own LICENSE each),
   `lib/fujinet-network-cpc` is GPL-3 (own LICENSE).
