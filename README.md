@@ -5,6 +5,10 @@ for Classic Computing 2026): real retro computers (Atari XL/XE, Commodore 64 and
 FujiNet, Schneider/Amstrad CPC via an M4 board) steer via joystick over the network while a Python/pygame
 server on a modern PC draws the whole board and runs the game logic.
 
+**Vibe coded:** this project - the server, the games, the clients for all four machines and the
+development kits in `devkits/` - was generated with [Claude Code](https://claude.com/claude-code),
+Anthropic's AI coding assistant, from prompts; most commits carry a `Co-Authored-By: Claude` line.
+
 New here: the **first connecting client picks which game to play** from
 a server-provided list; the second client is auto-matched into it. New
 games are added as plugins (`server/games/<name>.py`) without touching
