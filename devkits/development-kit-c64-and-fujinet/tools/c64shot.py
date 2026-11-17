@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Headless run of VICE for `make shot`: starts x64sc without a window (SDL dummy video, dummy
-sound) with its binary monitor on 127.0.0.1:PORT, presses keys / moves joysticks at the times of a
-short script, and after FRAMES frames saves the screen as PNG and the text screen as text.
+"""Headless run of VICE for `make shot`: starts x64sc without a window (SDL dummy video, sound
+into a WAV file) with its binary monitor on 127.0.0.1:PORT, presses keys / moves joysticks at the times of a
+short script, and after FRAMES frames saves the screen as PNG and the text screen as text. The
+sound of the whole run is recorded to OUT_PREFIX.wav.
 
     c64shot.py PORT FRAMES 'SCRIPT' OUT_PREFIX -- x64sc-command...
 
@@ -238,7 +239,8 @@ def main():
         env[env["BRIDGE_LIBPATH"]] = env["BRIDGE_DIR"]
     log = open(outp + ".vice.log", "w")
     proc = subprocess.Popen(vice + ["-binarymonitor", "-binarymonitoraddress",
-                                    f"ip4://127.0.0.1:{port}", "-sounddev", "dummy"],
+                                    f"ip4://127.0.0.1:{port}", "-sounddev", "wav",
+                                    "-soundarg", outp + ".wav"],
                             env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         mon = Monitor(port)
