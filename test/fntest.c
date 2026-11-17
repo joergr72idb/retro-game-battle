@@ -16,7 +16,7 @@
 #define SERVER_PORT 6510
 #endif
 
-static char spec[64], rspec[64], line[80];
+static char spec[64], rspec[64], spec3[64], line[80];
 static uint8_t buf[1500];
 static uint8_t failed;
 
@@ -204,6 +204,106 @@ static void http(const char *name, const char *path, uint8_t mode, const char *d
     network_close(spec);
 }
 
+/* reads one collected response header in get-headers mode: compares it with want (with the
+   EOL), returns 1 if it matches */
+static uint8_t header(const char *want)
+{
+    uint16_t bw;
+    uint8_t c, err;
+    int16_t r;
+    char d[60];
+
+    network_status(spec, &bw, &c, &err);
+    r = network_read(spec, buf, bw);
+    buf[r > 0 ? r : 0] = 0;
+    if (bw == strlen(want) && r == bw && !strcmp((char *)buf, want) && err == NETWORK_SUCCESS && !c)
+        return 1;
+    sprintf(d, "bw=%u r=%d c=%u err=%u got=%.20s", bw, r, c, err, (char *)buf);
+    report("H14-headers", 0, d);
+    return 0;
+}
+
+/* H14/H15: response headers, collected through a redirect; then the body as usual */
+static void http_headers(void)
+{
+    uint16_t bw;
+    uint8_t c, err, ok;
+    char d[60];
+
+    hspec("/redir-info");
+    network_open(spec, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+    ok = network_http_set_channel_mode(spec, HTTP_CHAN_MODE_COLLECT_HEADERS) == FN_ERR_OK;
+    ok &= network_write(spec, "X-Answer", 8) == FN_ERR_OK;
+    ok &= network_write(spec, "content-type\x9b", 13) == FN_ERR_OK;   /* EOL dropped */
+    ok &= network_write(spec, "X-Missing\r\n", 11) == FN_ERR_OK;
+    ok &= network_write(spec, "Bad:", 4) == FN_ERR_BAD_CMD;
+    /* another unit can't collect at the same time */
+    sprintf(spec3, "N3:HTTP://%s:%u/info", SERVER_HOST, SERVER_PORT + 2);
+    network_open(spec3, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+    network_http_set_channel_mode(spec3, HTTP_CHAN_MODE_COLLECT_HEADERS);
+    ok &= network_write(spec3, "X-Answer", 8) == FN_ERR_IO_ERROR
+          && fn_network_error == NETWORK_ERROR_COULD_NOT_ALLOCATE_BUFFERS;
+    network_close(spec3);
+    ok &= network_http_set_channel_mode(spec, HTTP_CHAN_MODE_GET_HEADERS) == FN_ERR_OK;
+    if (!ok) {
+        report("H14-headers", 0, "collect");
+        network_close(spec);
+        return;
+    }
+    /* in the order collected; the first X-Answer counts, spaces around it dropped */
+    if (!header("42\x9b") || !header("text/plain\x9b") || !header("\x9b")) {
+        network_close(spec);
+        return;
+    }
+    network_status(spec, &bw, &c, &err);
+    sprintf(d, "end bw=%u err=%u", bw, err);
+    report("H14-headers", bw == 0 && err == NETWORK_ERROR_END_OF_FILE, d);
+    /* again from the first one, then the body */
+    network_http_set_channel_mode(spec, HTTP_CHAN_MODE_GET_HEADERS);
+    ok = header("42\x9b");
+    network_http_set_channel_mode(spec, HTTP_CHAN_MODE_BODY);
+    body(&err);
+    sprintf(d, "err=%u body=%.20s", err, (char *)buf);
+    report("H15-headers-body", ok && !strcmp((char *)buf, "INFO") && err == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+}
+
+/* H16/H17: OPEN_MODE_HTTP_PUT - the data written is sent with the first read or at close */
+static void http_put(void)
+{
+    uint8_t err, ok;
+    int16_t r;
+    FN_ERR e;
+    char d[60];
+
+    hspec("/echo");
+    network_open(spec, OPEN_MODE_HTTP_PUT, OPEN_TRANS_NONE);
+    ok = network_write(spec, "abc", 3) == FN_ERR_OK && network_write(spec, "def", 3) == FN_ERR_OK;
+    r = network_read(spec, buf, 100);
+    buf[r > 0 ? r : 0] = 0;
+    sprintf(d, "r=%d err=%u body=%.20s", r, fn_network_error, (char *)buf);
+    report("H16-put-read", ok && !strcmp((char *)buf, "PUT LEN=6:abcdef")
+           && fn_network_error == NETWORK_ERROR_END_OF_FILE, d);
+    network_close(spec);
+
+    hspec("/putclose");
+    network_open(spec, OPEN_MODE_HTTP_PUT, OPEN_TRANS_NONE);
+    network_write(spec, "hello ", 6);
+    network_write(spec, "cpc", 3);
+    ok = network_close(spec) == FN_ERR_OK;
+    hspec("/putcheck");
+    network_open(spec, OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE);
+    body(&err);
+    network_close(spec);
+    ok &= !strcmp((char *)buf, "hello cpc");
+    hspec("/nope");                     /* an HTTP error comes back from the close */
+    network_open(spec, OPEN_MODE_HTTP_PUT, OPEN_TRANS_NONE);
+    network_write(spec, "x", 1);
+    e = network_close(spec);
+    sprintf(d, "got=%.12s e=%u err=%u", (char *)buf, e, fn_network_error);
+    report("H17-put-close", ok && e == FN_ERR_IO_ERROR && fn_network_error == NETWORK_ERROR_FILE_NOT_FOUND, d);
+}
+
 static void http_tests(void)
 {
     uint16_t i, n;
@@ -287,12 +387,22 @@ static void http_tests(void)
 
     http("H9-space", "/a b", OPEN_MODE_HTTP_GET, 0, "SPACE", NETWORK_ERROR_END_OF_FILE);
 
-    /* not supported: response headers */
-    hspec("/hdr");
-    network_open(spec, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
-    sprintf(d, "e=%u", network_http_set_channel_mode(spec, HTTP_CHAN_MODE_COLLECT_HEADERS));
-    report("H-collect", fn_network_error == NETWORK_ERROR_NOT_IMPLEMENTED, d);
+    /* redirects: 301/302 for GET and DELETE, absolute (to another host name) or a path */
+    http("H10-redir", "/redir", OPEN_MODE_HTTP_GET, 0, "TARGET", NETWORK_ERROR_END_OF_FILE);
+    http("H11-redir-path", "/redir-rel", OPEN_MODE_HTTP_GET, 0, "TARGET", NETWORK_ERROR_END_OF_FILE);
+    hspec("/moved");
+    network_http_delete(spec, OPEN_TRANS_NONE);
+    body(&err);
+    sprintf(d, "err=%u body=%.20s", err, (char *)buf);
+    report("H12-redir-delete", !strcmp((char *)buf, "DELETED") && err == NETWORK_ERROR_END_OF_FILE, d);
     network_close(spec);
+    /* not followed: more than 10, to https, for POST (that one's body stays readable) */
+    http("H13-redir-loop", "/loop", OPEN_MODE_HTTP_GET, 0, "moved", NETWORK_ERROR_GENERAL);
+    http("H13-redir-https", "/redir-https", OPEN_MODE_HTTP_GET, 0, "moved", NETWORK_ERROR_GENERAL);
+    http("H13-redir-post", "/redir", OPEN_MODE_HTTP_POST, "x", "moved", NETWORK_ERROR_GENERAL);
+
+    http_headers();
+    http_put();
 }
 #endif
 
@@ -341,8 +451,6 @@ int main(void)
            FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
 #endif
     expect("https", "N1:HTTPS://127.0.0.1/", OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE,
-           FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
-    expect("http-put8", "N1:HTTP://127.0.0.1/", OPEN_MODE_HTTP_PUT, OPEN_TRANS_NONE,
            FN_ERR_BAD_CMD, NETWORK_ERROR_NOT_IMPLEMENTED);
     expect("no-port", "N1:TCP://127.0.0.1/", OPEN_MODE_RW, OPEN_TRANS_NONE,
            FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);

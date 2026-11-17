@@ -8,11 +8,10 @@
  * M4 board (lib/m4 of development-kit-cpc-and-m4). Own code, not taken from fujinet-lib.
  *
  * Supported so far: TCP client connections ("N:TCP://host:port/") and HTTP requests
- * ("N:HTTP://host[:port]/path": GET, POST, PUT, DELETE, request headers), units N1:-N4:
- * (N: = N1:), no translation (OPEN_TRANS_NONE); -DFN_NO_HTTP leaves HTTP out (TCP only, about
- * 2.9 KB smaller). Everything else (HTTPS, listening, UDP,
- * reading response headers, JSON, ...) returns FN_ERR_BAD_CMD with fn_network_error =
- * NETWORK_ERROR_NOT_IMPLEMENTED.
+ * ("N:HTTP://host[:port]/path": GET, POST, PUT, DELETE, request and response headers,
+ * redirects), units N1:-N4: (N: = N1:), no translation (OPEN_TRANS_NONE); -DFN_NO_HTTP leaves
+ * HTTP out (TCP only, about 5.5 KB smaller). Everything else (HTTPS, listening, UDP, JSON, ...)
+ * returns FN_ERR_BAD_CMD with fn_network_error = NETWORK_ERROR_NOT_IMPLEMENTED.
  */
 #ifndef FUJINET_NETWORK_H
 #define FUJINET_NETWORK_H
@@ -61,7 +60,8 @@ enum {
 
 /* HTTP: the method is chosen by the open mode */
 #define OPEN_MODE_HTTP_GET      (0x04)  /* GET */
-#define OPEN_MODE_HTTP_PUT      (0x08)  /* PUT of everything written until close: not supported */
+#define OPEN_MODE_HTTP_PUT      (0x08)  /* PUT of everything written (up to FN_RXBUF bytes),
+                                           sent with the first read or at close */
 #define OPEN_MODE_HTTP_GET_H    (0x0C)  /* GET, request headers can be added */
 #define OPEN_MODE_HTTP_POST     (0x0D)  /* POST */
 #define OPEN_MODE_HTTP_PUT_H    (0x0E)  /* PUT, like POST */
@@ -70,8 +70,9 @@ enum {
 
 /* HTTP channel modes (network_http_set_channel_mode) */
 #define HTTP_CHAN_MODE_BODY             (0) /* reads give the response body */
-#define HTTP_CHAN_MODE_COLLECT_HEADERS  (1) /* not supported */
-#define HTTP_CHAN_MODE_GET_HEADERS      (2) /* not supported */
+#define HTTP_CHAN_MODE_COLLECT_HEADERS  (1) /* before the request: each write is a response
+                                               header name to keep ("Content-Type") */
+#define HTTP_CHAN_MODE_GET_HEADERS      (2) /* each read gives the next kept value + 0x9B */
 #define HTTP_CHAN_MODE_SET_HEADERS      (3) /* writes add request headers ("Name: value") */
 #define HTTP_CHAN_MODE_POST_SET_DATA    (4) /* writes add to the POST/PUT data */
 
@@ -102,9 +103,13 @@ FN_ERR network_init(void);
  * or read in HTTP_CHAN_MODE_BODY (or with network_http_post); until then headers and POST data
  * can be added. The response is read like a TCP stream: the body, then NETWORK_ERROR_END_OF_FILE.
  * An HTTP error status shows as the err of network_status (404 = NETWORK_ERROR_FILE_NOT_FOUND,
- * ...); its body can still be read. Redirects are not followed. */
+ * ...); its body can still be read. Redirects (301, 302) are followed for GET and DELETE, up to
+ * 10, to "http://..." or a path on the same server; headers added by the program are not sent
+ * again. Other 3xx, or one that can't be followed, is NETWORK_ERROR_GENERAL with its body. */
 FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans);
 
+/* OPEN_MODE_HTTP_PUT: sends the PUT if no read did; an HTTP error is returned
+ * (FN_ERR_IO_ERROR, fn_network_error = the code) */
 FN_ERR network_close(const char *devicespec);
 
 /* bw = bytes waiting, c = connected, err = device error code. Does not wait. */
@@ -124,7 +129,15 @@ uint8_t network_unit(const char *devicespec);
 
 /* ---- HTTP (an open HTTP unit) ---- */
 
-/* HTTP_CHAN_MODE_BODY, _SET_HEADERS or _POST_SET_DATA (the last two before the request) */
+/* HTTP_CHAN_MODE_BODY, _SET_HEADERS, _COLLECT_HEADERS, _POST_SET_DATA (these three before the
+ * request) or _GET_HEADERS.
+ * Response headers: in COLLECT_HEADERS mode each write is one name (any case, a trailing EOL
+ * is dropped; together up to FN_HDR_NAMES bytes); one unit at a time can collect (another one
+ * gets NETWORK_ERROR_COULD_NOT_ALLOCATE_BUFFERS). Switching to GET_HEADERS starts at the first
+ * name: network_status sends the request and waits for the response head, bw = the length of
+ * the next value + 1, connected = 0, err = NETWORK_ERROR_END_OF_FILE after the last one. Each
+ * read gives one value and 0x9B, in the order collected (a header not in the response: 0x9B
+ * alone; values together up to FN_HDR_VALUES bytes). Back in BODY mode the body is read. */
 FN_ERR network_http_set_channel_mode(const char *devicespec, uint8_t mode);
 #define network_http_set_mode network_http_set_channel_mode
 

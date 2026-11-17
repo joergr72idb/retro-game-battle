@@ -6,7 +6,7 @@
     python3 test/testserver.py [port] [timeout_seconds]
 
 Each connection says what it is in its first line: REPORT (the results, printed here),
-or T1-T4 (a test case). An HTTP server on port+2 answers the HTTP tests (H1-H9). Exits 0
+or T1-T4 (a test case). An HTTP server on port+2 answers the HTTP tests (H1-H17). Exits 0
 when fntest reports DONE PASS and the server-side checks passed, 1 otherwise (or on timeout).
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,7 +18,7 @@ import time
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 6510
 TIMEOUT = float(sys.argv[2]) if len(sys.argv) > 2 else 300
 
-result = {"done": None, "server_ok": True}
+result = {"done": None, "server_ok": True, "put": b""}
 finished = threading.Event()
 
 
@@ -114,8 +114,29 @@ class Http(BaseHTTPRequestHandler):
         except BrokenPipeError:     # a request the CPC closed without finishing (H-collect)
             pass
 
+    def redirect(self, code, where):
+        self.answer(code, b"moved", [("Location", where)])
+
     def do_GET(self):
-        if self.path == "/big":         # a header line longer than the CPC's buffer, 3000 bytes
+        here = "http://127.0.0.1:%d" % (PORT + 2)
+        if self.path == "/redir":         # absolute, to another host name
+            self.redirect(302, "http://localhost:%d/target" % (PORT + 2))
+        elif self.path == "/redir-rel":
+            self.redirect(301, "/target")
+        elif self.path == "/redir-info":
+            self.redirect(302, here + "/info")
+        elif self.path == "/redir-https":
+            self.redirect(302, "https://127.0.0.1/target")
+        elif self.path.startswith("/loop"):   # /loop0, /loop1, ... for ever
+            self.redirect(302, "/loop%d" % (int(self.path[5:] or 0) + 1))
+        elif self.path == "/target":
+            self.answer(200, b"TARGET")
+        elif self.path == "/info":
+            self.answer(200, b"INFO", [("Content-Type", "text/plain"), ("X-Answer", "  42  "),
+                                       ("x-answer", "second")])
+        elif self.path == "/putcheck":    # what the last PUT to /putclose brought
+            self.answer(200, result["put"])
+        elif self.path == "/big":         # a header line longer than the CPC's buffer, 3000 bytes
             self.answer(200, pattern(3000, 11), [("X-Long", "a" * 400)])
         elif self.path == "/hdr":
             self.answer(200, b"X=" + self.headers.get("X-Test", "").encode())
@@ -127,14 +148,28 @@ class Http(BaseHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length", "0"))
         data = self.rfile.read(n)
+        if self.path == "/redir":         # not followed for POST
+            self.redirect(302, "/target")
+            return
         if n >= 100:
             data = b"OK" if data == pattern(n, 13) else b"BAD"
         self.answer(200, ("%s LEN=%d:" % (self.command, n)).encode() + data)
 
-    do_PUT = do_POST
+    def do_PUT(self):
+        if self.path == "/nope":
+            self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            self.answer(404, b"nope")
+        elif self.path == "/putclose":
+            result["put"] = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            self.answer(201, b"")
+        else:
+            self.do_POST()
 
     def do_DELETE(self):
-        self.answer(200, b"DELETED" if self.path == "/item" else b"?")
+        if self.path == "/moved":
+            self.redirect(302, "/item")
+        else:
+            self.answer(200, b"DELETED" if self.path == "/item" else b"?")
 
 
 def main():
