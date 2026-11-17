@@ -4,6 +4,10 @@ A self-contained toolchain for macOS and Linux for CPC programs that use the M4 
 emulator whose M4 reaches the internet through the computer's network. Everything is built into `opt/` inside this
 folder; nothing is installed system-wide except a few Homebrew or apt packages.
 
+**Vibe coded:** this kit - the setup scripts, Makefiles, tools, samples and docs - was generated with
+[Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant, from prompts; every commit
+carries a `Co-Authored-By: Claude` line. The tools it builds are other people's work (see below).
+
 | Tool | Version | What it is |
 |---|---|---|
 | [SDCC](https://sdcc.sourceforge.net/) | 4.6.0 (Homebrew) / 4.5.0 (apt) | C compiler for the Z80 |
