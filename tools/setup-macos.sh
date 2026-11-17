@@ -28,7 +28,7 @@ clone() {  # clone <github repo> <dir> <ref>
 }
 
 prereqs() {
-    brew install autoconf automake cmake pkgconf sdl2 sdl2_image mbedtls@3 gh xa dos2unix bison
+    brew install autoconf automake cmake pkgconf sdl2 sdl2_image mbedtls@3 xa dos2unix bison
 }
 
 build_cc65() {
@@ -41,7 +41,7 @@ build_cc65() {
 build_fujinet_lib() {
     step fujinet-lib fujinet-lib
     rm -rf "$OPT/fujinet-lib" && mkdir -p "$OPT/fujinet-lib"
-    ( cd "$OPT/fujinet-lib" && gh release download "$FNLIB_TAG" -R FujiNetWIFI/fujinet-lib -p "fujinet-lib-c64-*.zip" \
+    ( cd "$OPT/fujinet-lib" && curl -fsSLO "https://github.com/FujiNetWIFI/fujinet-lib/releases/download/$FNLIB_TAG/fujinet-lib-c64-${FNLIB_TAG#v}.zip" \
         && unzip -oq fujinet-lib-c64-*.zip ) >"$LOG/fujinet-lib.log" 2>&1
     ls "$OPT"/fujinet-lib/fujinet-c64-*.lib
 }

@@ -8,6 +8,7 @@
 #   make stop         stop this kit's FujiNet-PC
 #   make shot         headless run (no window) of PRG for FRAMES frames (default 600 = 12 s PAL), keys and
 #                     joystick from KEYS (tools/c64shot.py), screen -> build/shot.png, text screen -> build/shot.txt
+#                     sound -> build/shot.wav
 #                     e.g. make shot KEYS='wait 300; type hello; key RETURN; joy up+fire 20'
 #   make run NETIEC_PORT=1542 WEB_PORT=8003   other ports, e.g. next to another FujiNet-PC for IEC
 #
@@ -42,10 +43,13 @@ VICE_UNITS := $(foreach u,$(UNITS),$(if $(filter 8 9 10 11,$(u)),\
 
 .PHONY: all run config fujinet stop clean shot
 
-all: build/hello-c.prg build/hello-asm.prg build/hello-bas.prg build/samples.d64
+all: build/hello-c.prg build/hello-asm.prg build/hello-bas.prg build/demo.prg build/samples.d64
 
 build/hello-c.prg: samples/hello.c | build
 	$(CL65) $(CFLAGS) -m build/hello-c.map -Ln build/hello-c.lbl -o $@ $< $(FNLIBA)
+
+build/demo.prg: samples/demo.c samples/demo.s | build
+	$(CL65) $(CFLAGS) -m build/demo.map -Ln build/demo.lbl -o $@ samples/demo.c samples/demo.s $(FNLIBA)
 
 build/hello-asm.prg: samples/hello.s | build
 	$(CL65) -t c64 -C c64-asm.cfg -u __EXEHDR__ -Ln build/hello-asm.lbl -o $@ $<
@@ -53,10 +57,11 @@ build/hello-asm.prg: samples/hello.s | build
 build/hello-bas.prg: samples/hello.bas | build
 	$(VICE)/petcat -w2 -o $@ -- $<
 
-build/samples.d64: build/hello-c.prg build/hello-asm.prg build/hello-bas.prg
+build/samples.d64: build/hello-c.prg build/hello-asm.prg build/hello-bas.prg build/demo.prg
 	rm -f $@
 	$(VICE)/c1541 -silent -format "samples,01" d64 $@ \
-	  -write build/hello-c.prg hello-c -write build/hello-asm.prg hello-asm -write build/hello-bas.prg hello-bas
+	  -write build/hello-c.prg hello-c -write build/hello-asm.prg hello-asm -write build/hello-bas.prg hello-bas \
+	  -write build/demo.prg demo
 
 build:
 	mkdir -p build/logs
@@ -96,7 +101,7 @@ KEYS      ?=
 MON_PORT  ?= 6520
 shot: $(PRG) fujinet
 	@tools/check-ports $(WEB_PORT) $(NETIEC_PORT) $(FUJINET) vice
-	rm -f build/shot.png build/shot.txt
+	rm -f build/shot.png build/shot.txt build/shot.wav
 	# macOS drops DYLD_* on the way through /usr/bin/python3 (SIP): c64shot.py sets it for VICE itself
 	BRIDGE_LIBPATH=$(LIBPATH) BRIDGE_DIR=$(BRIDGE) NETIEC_PORT=$(NETIEC_PORT) python3 -I tools/c64shot.py $(MON_PORT) $(FRAMES) '$(KEYS)' \
 	  $(DEV)/build/shot -- $(VICE)/x64sc $(subst vice-run.log,vice-shot.log,$(VICE_ARGS)) $(VICE_UNITS) -autostart $(PRG)

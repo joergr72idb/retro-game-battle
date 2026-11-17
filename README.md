@@ -27,7 +27,7 @@ tools/setup-linux.sh vice      # rebuild single parts: cc65 fujinet-lib fujinet-
 ```
 
 Linux needs these packages first (`setup-linux.sh` lists the missing ones and stops):
-`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libsdl2-image-dev libmbedtls-dev python3-venv gh unzip curl xa65 dos2unix bison flex texinfo`
+`sudo apt install build-essential git autoconf automake cmake pkg-config libsdl2-dev libsdl2-image-dev libmbedtls-dev python3-venv libssl-dev libcurl4-openssl-dev unzip curl xa65 dos2unix bison flex texinfo`
 
 Versions are pinned at the top of both setup scripts (keep them in step). Build logs go to `build/logs/`.
 
@@ -56,13 +56,13 @@ above. Not tested yet - reports are welcome (GitHub issues).
 ## Use
 
 ```sh
-make                           # samples: build/hello-c.prg, hello-asm.prg, hello-bas.prg + build/samples.d64
+make                           # samples: build/hello-c.prg, hello-asm.prg, hello-bas.prg, demo.prg + build/samples.d64
 make run                       # FujiNet-PC + VICE with the C sample
 make run PRG=build/hello-bas.prg
 make run UNITS="8 16 29 30"    # also drive 8 from FujiNet-PC (Meatloaf drive) instead of VICE's own
 make config                    # VICE with FujiNet as drive 8, for FujiNet's CONFIG: LOAD"CONFIG.PRG",8
 make stop                      # stops this kit's FujiNet-PC
-make shot                      # headless run, no window: build/shot.png + build/shot.txt
+make shot                      # headless run, no window: build/shot.png + build/shot.txt + build/shot.wav
 make shot PRG=my.prg FRAMES=900 KEYS='wait 350; type hello; key RETURN; joy up+fire 20'
 ```
 
@@ -70,7 +70,10 @@ make shot PRG=my.prg FRAMES=900 KEYS='wait 350; type hello; key RETURN; joy up+f
 without a window for `FRAMES` frames (default 600 = 12 s PAL, timed by the clock), gets the keys and
 joystick moves in `KEYS` through its binary monitor (127.0.0.1:`MON_PORT`, default 6520), and at
 the end `build/shot.png` (the screen) and `build/shot.txt` (the text screen as plain text) are
-written. FujiNet-PC is started as for `make run` and keeps running (`make stop`).
+written. The sound of the whole run goes to `build/shot.wav` (VICE's `wav` sound device; e.g.
+`ffmpeg -i build/shot.wav -lavfi showspectrumpic=s=1200x500 spec.png` shows the notes without
+listening). While a program talks to the FujiNet, the emulation waits for the bus, so the WAV
+can be a few seconds shorter than the run. FujiNet-PC is started as for `make run` and keeps running (`make stop`).
 
 `KEYS` (`tools/c64shot.py`): commands separated by `;` - `wait N` (frames), `type TEXT` (through the
 keyboard buffer, as BASIC and cc65's `cgetc` read it; upper case letters come out shifted), `key NAME`
@@ -88,9 +91,41 @@ Samples in `samples/`:
 - `hello.c` – C with fujinet-lib: asks the FujiNet for its version, hostname and IP address.
 - `hello.s` – ca65 assembler: prints a line through the KERNAL.
 - `hello.bas` – C64 BASIC, tokenized with `petcat`.
+- `demo.c` + `demo.s` – a small demoscene-style screen: a big logo whose letters are holes in black
+  quadrant characters, with a rainbow behind them, raster bars, a smooth scroller ($D016, reverse
+  characters with a rainbow behind them as well), a 3-voice SID tune (melody with pulse width
+  modulation, chord arpeggio, drums and bass on one voice) and the current temperature in Celle,
+  fetched through FujiNet (N:HTTPS + JSON). Two raster interrupts per frame set the background
+  colour line by line; C does the network part and the texts, assembler everything that moves. It is
+  the C64 version of the Atari kit's demo, with the same tune. `make run PRG=build/demo.prg`.
+
+  ![The demo in VICE: rainbow logo with the temperature, raster bars, info panel, scroller](docs/demo.png)
+
+  An AI assistant (Claude Code) generated the demo from this prompt, after it had made the Atari
+  kit's demo; no code was written by hand. The assistant checked it in the kit's headless loop
+  (`make shot`: screenshots, a zoomed crop, a spectrogram of `build/shot.wav`) and fixed what it found
+  there: the URL had been converted to ASCII by hand, but the FujiNet converts PETSCII device specs
+  itself; the border colour lagged one line behind (so the border now stays black); one panel line
+  was hard to read. The WAV recording in `make shot` was added for this demo.
+
+  > hello. i like to build such a demo program for the c64 like we did for the atari toolchain... Is
+  > that possible?
 
 Without a running emulator, `opt/vice-bridge/netiecctl` talks to FujiNet-PC directly:
 `netiecctl status 8`, `netiecctl dir 8`, `netiecctl fuji e8` (adapter config).
+
+## The same demo on four machines
+
+The kits for the Atari XL, the C64, the CPC and the Apple II each have this demo as a sample: the same
+tune and the temperature in Celle, fetched live over the network - each made with its own machine's means.
+
+| [Atari XL + FujiNet](https://github.com/joergr72idb/development-kit-atari-xl-and-fujinet) | [C64 + FujiNet](https://github.com/joergr72idb/development-kit-c64-and-fujinet) |
+|:---:|:---:|
+| ![The demo on the Atari XL](docs/demos/atari.png) | ![The demo on the C64](docs/demos/c64.png) |
+| display list interrupts, fine scrolling with HSCROL, POKEY | letters as holes in characters with a rainbow behind them, $D016, SID |
+| **[CPC + M4](https://github.com/joergr72idb/development-kit-cpc-and-m4)** | **[Apple II + FujiNet](https://github.com/joergr72idb/development-kit-apple2-and-fujinet)** |
+| ![The demo on the CPC](docs/demos/cpc.png) | ![The demo on the Apple II](docs/demos/apple2.png) |
+| Gate Array colours on every scan line, counted to the microsecond, AY | lo-res drawn again every frame into the hidden page, Mockingboard |
 
 ## Notes
 
