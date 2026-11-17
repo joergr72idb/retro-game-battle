@@ -7,10 +7,11 @@
  * FujiNet on the Atari, C64 or Apple II builds for the CPC too. Underneath it talks to the
  * M4 board (lib/m4 of development-kit-cpc-and-m4). Own code, not taken from fujinet-lib.
  *
- * Supported so far: TCP client connections ("N:TCP://host:port/") and HTTP requests
+ * Supported so far: TCP client and server connections ("N:TCP://host:port/", "N:TCP://:port/")
+ * and HTTP requests
  * ("N:HTTP://host[:port]/path": GET, POST, PUT, DELETE, request and response headers,
  * redirects), units N1:-N4: (N: = N1:), no translation (OPEN_TRANS_NONE); -DFN_NO_HTTP leaves
- * HTTP out (TCP only, about 5.5 KB smaller). Everything else (HTTPS, listening, UDP, JSON, ...)
+ * HTTP out (TCP only, about 5.5 KB smaller). Everything else (HTTPS, UDP, JSON, ...)
  * returns FN_ERR_BAD_CMD with fn_network_error = NETWORK_ERROR_NOT_IMPLEMENTED.
  */
 #ifndef FUJINET_NETWORK_H
@@ -46,7 +47,11 @@ enum {
     NETWORK_ERROR_FILE_NOT_FOUND                = 170,
     NETWORK_ERROR_CONNECTION_REFUSED            = 200,
     NETWORK_ERROR_NETWORK_UNREACHABLE           = 201,
+    NETWORK_ERROR_CONNECTION_RESET              = 204,
+    NETWORK_ERROR_CONNECTION_ALREADY_IN_PROGRESS = 205,
     NETWORK_ERROR_NOT_CONNECTED                 = 207,
+    NETWORK_ERROR_SERVER_NOT_RUNNING            = 208,
+    NETWORK_ERROR_NO_CONNECTION_WAITING         = 209,
     NETWORK_ERROR_INVALID_USERNAME_OR_PASSWORD  = 212,
     NETWORK_ERROR_CLIENT_GENERAL                = 214,
     NETWORK_ERROR_SERVER_GENERAL                = 215,
@@ -123,6 +128,22 @@ int16_t network_read_nb(const char *devicespec, void *buf, uint16_t len);
 int16_t network_read(const char *devicespec, void *buf, uint16_t len);
 
 FN_ERR network_write(const char *devicespec, const void *buf, uint16_t len);
+
+/* ---- TCP server ("Nx:TCP://:port/", no host) ----
+ * network_open listens on the port. One client at a time per unit: network_status says
+ * connected = 1 when one is waiting (err NETWORK_SUCCESS), network_accept takes it, then status,
+ * read and write are that client's (at its end: NETWORK_ERROR_END_OF_FILE, and connected = 0, or 1
+ * as soon as the next client is waiting - as on the FujiNet).
+ * network_close_client ends it; network_accept takes the next one. On the M4 the unit listens again
+ * only when its client has gone: until then other clients are refused. network_close stops
+ * listening. */
+
+/* FN_ERR_IO_ERROR with NETWORK_ERROR_NO_CONNECTION_WAITING, _CONNECTION_ALREADY_IN_PROGRESS
+ * (the client before is still connected) or _SERVER_NOT_RUNNING (not a server unit) */
+FN_ERR network_accept(const char *devicespec);
+
+/* Close an accepted TCP client connection, keeping the server listening */
+FN_ERR network_close_client(const char *devicespec);
 
 /* the unit of a devicespec: "N:" = 1, "N3:" = 3 */
 uint8_t network_unit(const char *devicespec);

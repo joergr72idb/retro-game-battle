@@ -18,6 +18,10 @@
  * Redirects: 301 and 302 for GET and DELETE are followed (up to FN_REDIRECTS), as the FujiNet
  * firmware does. OPEN_MODE_HTTP_PUT: the written data waits in the receive buffer like POST data.
  *
+ * TCP server ("N1:TCP://:port/"): the M4 listens on a socket and takes one client on it; the
+ * socket then IS that connection and no longer listens. So one client at a time per unit: when it
+ * has gone (or network_close_client) a new socket listens again; until then others are refused.
+ *
  * -DFN_NO_HTTP leaves HTTP out (about 3 KB less): HTTP opens return NOT_IMPLEMENTED as for
  * other protocols, and the network_http_* functions are not there (a program using them
  * does not link).
@@ -35,6 +39,9 @@
 enum { M_TCP, M_GET, M_POST, M_PUT, M_DELETE };
 /* HTTP state */
 enum { H_NONE, H_REQUEST, H_HEAD, H_BODY };
+/* TCP server: listening, no client taken (the M4 socket accepts one by itself - it is "waiting"
+   until network_accept), or a client taken (sock is that connection) */
+enum { S_LISTEN = 1, S_CLIENT };
 
 #ifndef FN_NO_HTTP
 #ifndef FN_HDR_NAMES
@@ -56,11 +63,12 @@ typedef struct {
     uint8_t err;                /* NETWORK_SUCCESS, or the error from the HTTP status */
     uint8_t first;              /* response head: the status line is still to come */
     uint8_t skip;               /* response head: inside a line longer than the buffer */
+    uint8_t srv;                /* TCP server: S_LISTEN or S_CLIENT, 0 = not a server */
+    uint16_t port;              /* HTTP: of the host; server: the one listened on */
 #ifndef FN_NO_HTTP
     uint8_t putw;               /* OPEN_MODE_HTTP_PUT: writes in body mode are the PUT data */
     uint8_t redir;              /* response head: a redirect that is followed */
     uint8_t redirs;             /* redirects followed so far */
-    uint16_t port;
     char host[FN_HOST];
 #endif
     uint16_t start, len;        /* buffered bytes: rx[start .. start+len) */
@@ -437,6 +445,23 @@ static void redirect(Unit *u)
 
 /* ---- receiving ------------------------------------------------------------------------ */
 
+/* TCP server: a new socket listens on u->port (M4_ERROR if that failed). The old one is closed. */
+static void listen_again(Unit *u)
+{
+    uint8_t s;
+
+    if (u->sock && u->sock != M4_ERROR)
+        m4_close(u->sock);
+    s = m4_socket();
+    if (s == M4_ERROR || s == 0)
+        s = M4_ERROR;
+    else if (m4_listen(s, u->port) != 0) {
+        m4_close(s);
+        s = M4_ERROR;
+    }
+    u->sock = s;
+}
+
 /* takes what the M4 has into the unit's buffer, without waiting (HTTP: through the head) */
 static void fill(Unit *u)
 {
@@ -458,9 +483,11 @@ static void fill(Unit *u)
             u->start = 0;
         }
         r = m4_recv(u->sock, u->rx + u->len, FN_RXBUF - u->len);
-        if (r < 0 || (r == 0 && m4_sock_status(u->sock) >= 240))
+        if (r < 0 || (r == 0 && m4_sock_status(u->sock) >= 240)) {
             u->closed = 1;
-        else
+            if (u->srv)                 /* the client has gone: listen again at once */
+                listen_again(u);
+        } else
             u->len += r;
 #ifndef FN_NO_HTTP
         if (u->state == H_HEAD)
@@ -576,9 +603,7 @@ static const char *host_port(const char *p, char *host, uint16_t *port)
             return 0;
         host[i++] = *p;
     }
-    host[i] = 0;
-    if (i == 0)                         /* listening (no host) not supported */
-        return 0;
+    host[i] = 0;                        /* "" = listening */
     if (*p == ':') {
         if (*++p < '0' || *p > '9')
             return 0;
@@ -661,10 +686,25 @@ FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
 
     network_close(devicespec);
-    if ((s = connect_to(host, port)) == 0)
+    u = &units[n - 1];
+    u->srv = 0;
+    u->port = port;
+    if (!host[0]) {                     /* "TCP://:port/": a server */
+#ifndef FN_NO_HTTP
+        if (method != M_TCP)
+            return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_DEVICESPEC);
+#endif
+        u->sock = 0;
+        listen_again(u);
+        if (u->sock == M4_ERROR) {
+            u->sock = 0;
+            return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_GENERAL);
+        }
+        s = u->sock;
+        u->srv = S_LISTEN;
+    } else if ((s = connect_to(host, port)) == 0)
         return FN_ERR_IO_ERROR;
 
-    u = &units[n - 1];
 #ifndef FN_NO_HTTP
     if (method != M_TCP && request_head(s, method, host, port, p) != 0) {
         m4_close(s);
@@ -673,7 +713,6 @@ FN_ERR network_open(const char *devicespec, uint8_t mode, uint8_t trans)
     u->state = method == M_TCP ? H_NONE : H_REQUEST;
     u->putw = mode == OPEN_MODE_HTTP_PUT && method == M_PUT;
     u->redir = u->redirs = 0;
-    u->port = port;
     strcpy(u->host, host);
 #else
     u->state = H_NONE;
@@ -708,12 +747,83 @@ FN_ERR network_close(const char *devicespec)
         }
         if (u == hdr_unit)
             hdr_unit = 0;
-        if (u->sock != M4_ERROR)        /* M4_ERROR: a redirect that failed */
 #endif
+        if (u->sock != M4_ERROR)        /* M4_ERROR: a redirect or listening again failed */
             m4_close(u->sock);
         u->sock = 0;
     }
     return e;
+}
+
+/* ---- TCP server ----------------------------------------------------------------------- */
+
+/* the server unit of a devicespec, or 0 (nw_status: SERVER_NOT_RUNNING) */
+static Unit *server_unit(const char *devicespec)
+{
+    Unit *u = open_unit(devicespec);
+
+    if (u && !u->srv) {
+        fail(FN_ERR_IO_ERROR, NETWORK_ERROR_SERVER_NOT_RUNNING);
+        return 0;
+    }
+    return u;
+}
+
+/* listening: 1 = a client is there (taken by the M4, not yet by network_accept). One that
+   came and went, or a broken socket: listen again. */
+static uint8_t client_waiting(Unit *u)
+{
+    uint8_t st;
+
+    if (u->sock == M4_ERROR)
+        listen_again(u);
+    if (u->sock == M4_ERROR)
+        return 0;
+    st = m4_sock_status(u->sock);
+    if (st == M4_IDLE || st == M4_SENDING)
+        return 1;
+    if (st != M4_ACCEPTING)
+        listen_again(u);
+    return 0;
+}
+
+FN_ERR network_accept(const char *devicespec)
+{
+    Unit *u = server_unit(devicespec);
+
+    if (!u)
+        return FN_ERR_IO_ERROR;
+    if (u->srv == S_CLIENT) {
+        if (!u->closed)
+            return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_CONNECTION_ALREADY_IN_PROGRESS);
+        u->srv = S_LISTEN;              /* the last one has gone (what it sent is dropped) */
+    }
+    if (!client_waiting(u))             /* (it listens again if it could not before) */
+        return fail(FN_ERR_IO_ERROR, u->sock == M4_ERROR ? NETWORK_ERROR_SERVER_NOT_RUNNING
+                                                          : NETWORK_ERROR_NO_CONNECTION_WAITING);
+    u->srv = S_CLIENT;
+    u->closed = 0;
+    u->start = u->len = 0;
+    set_status(u);
+    return FN_ERR_OK;
+}
+
+FN_ERR network_close_client(const char *devicespec)
+{
+    Unit *u = server_unit(devicespec);
+
+    if (!u)
+        return FN_ERR_IO_ERROR;
+    if (u->srv == S_LISTEN) {           /* no client: as the FujiNet, ok with NOT_CONNECTED */
+        fail(FN_ERR_OK, NETWORK_ERROR_NOT_CONNECTED);
+        return FN_ERR_OK;
+    }
+    if (!u->closed)                     /* still connected: end it, listen again */
+        listen_again(u);
+    u->srv = S_LISTEN;
+    u->closed = 0;
+    u->start = u->len = 0;
+    return FN_ERR_OK;
 }
 
 /* ---- status, read, write -------------------------------------------------------------- */
@@ -723,7 +833,12 @@ FN_ERR network_status(const char *devicespec, uint16_t *bw, uint8_t *c, uint8_t 
     Unit *u = open_unit(devicespec);
     FN_ERR e = FN_ERR_IO_ERROR;
 
-    if (u) {
+    if (u && u->srv == S_LISTEN) {      /* connected = a client is waiting for network_accept */
+        nw_status.avail = 0;
+        nw_status.status = client_waiting(u);
+        nw_status.errcode = u->sock == M4_ERROR ? NETWORK_ERROR_SERVER_NOT_RUNNING : NETWORK_SUCCESS;
+        e = FN_ERR_OK;
+    } else if (u) {
         start_response(u, 0);
 #ifndef FN_NO_HTTP
         if (u->chan == HTTP_CHAN_MODE_GET_HEADERS)
@@ -731,6 +846,8 @@ FN_ERR network_status(const char *devicespec, uint16_t *bw, uint8_t *c, uint8_t 
 #endif
         fill(u);
         set_status(u);
+        if (u->srv && u->closed && !u->len)     /* the client has gone: as the FujiNet, */
+            nw_status.status = client_waiting(u);   /* connected = the next one is there */
         e = FN_ERR_OK;
     }
     *bw = nw_status.avail;
@@ -759,6 +876,10 @@ static Unit *read_unit(const char *devicespec)
 {
     Unit *u = open_unit(devicespec);
 
+    if (u && u->srv == S_LISTEN) {      /* a server without a client */
+        fail(FN_ERR_IO_ERROR, NETWORK_ERROR_NOT_CONNECTED);
+        return 0;
+    }
 #ifndef FN_NO_HTTP
     if (u) {
         start_response(u, 1);
@@ -879,6 +1000,8 @@ FN_ERR network_write(const char *devicespec, const void *buf, uint16_t len)
         return fail(FN_ERR_BAD_CMD, NETWORK_ERROR_INVALID_COMMAND);
     }
 #endif
+    if (u->srv && (u->srv == S_LISTEN || u->closed))  /* no client (sock may listen again) */
+        return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_NOT_CONNECTED);
     if (m4_send(u->sock, buf, len) != 0)
         return fail(FN_ERR_IO_ERROR, NETWORK_ERROR_GENERAL);
     return FN_ERR_OK;

@@ -38,6 +38,7 @@ Own code with the same names, constants and behaviour - no fujinet-lib code.
 | `network_read_nb` | waits for at least one byte, returns what is there |
 | `network_read` | waits for all requested bytes or the end of the connection |
 | `network_write`, `network_close`, `network_unit`, `nw_status` / `fn_network_*` | |
+| TCP server | `Nx:TCP://:port/` listens; `network_accept`, `network_close_client` |
 | HTTP methods | GET (`OPEN_MODE_HTTP_GET`, `_GET_H`), POST (`_POST`), PUT (`_PUT_H`), DELETE (`_DELETE`, `_DELETE_H`, `network_http_delete`) |
 | `network_http_post`, `network_http_post_bin`, `network_http_put` | send the request with its data, any length |
 | `network_http_start_add_headers`, `network_http_add_header`, `network_http_end_add_headers` | request headers |
@@ -46,6 +47,28 @@ Own code with the same names, constants and behaviour - no fujinet-lib code.
 | Redirects | 301 and 302 for GET and DELETE, up to 10, to `http://...` or a path on the same server |
 
 Units `N1:`-`N4:` (`N:` = `N1:`), the M4's four sockets.
+
+A TCP server works as on the FujiNet:
+
+```c
+network_open("N1:TCP://:6502/", OPEN_MODE_RW, OPEN_TRANS_NONE);   /* no host: listen */
+network_status("N1:", &waiting, &connected, &err);   /* connected = 1: a client is waiting */
+network_accept("N1:");                               /* then read, write, status are its */
+...
+network_close_client("N1:");                         /* end it; network_accept takes the next */
+network_close("N1:");                                /* stop listening */
+```
+
+The errors are the FujiNet's: `network_accept` with nobody there gives `FN_ERR_IO_ERROR` and
+209 (no connection waiting), while the last client is still connected 205, on a unit that does
+not listen 208; reading or writing without a client 207. When the client closes, its data can
+still be read, then 136 (end of file); `connected` turns 1 again as soon as the next client waits.
+
+One difference: the M4 takes one client on its listening socket, which then becomes that
+connection and stops listening (that is how the M4 firmware works, see Duke's `tcpserv.s`). So
+while a client is connected, others are refused; the library listens again at once when the
+client has gone or `network_close_client` ends it. The FujiNet keeps listening and lets the next
+ones wait. Each server unit uses one of the M4's four sockets.
 
 HTTP behaves as on the FujiNet: the request goes out with the first `network_status` or read
 (until then headers and POST data can be added), an HTTP error shows as the `err` of
@@ -79,14 +102,14 @@ Differences from the FujiNet firmware (2026):
   (`FN_HDR_NAMES`, `FN_HDR_VALUES`, `FN_RXBUF` when compiling the library).
 - An empty `OPEN_MODE_HTTP_PUT` is sent (`Content-Length: 0`); the firmware sends nothing.
 
-**Not yet:** HTTPS, other protocols (TNFS, FTP, ...), listening for connections, UDP,
+**Not yet:** HTTPS, other protocols (TNFS, FTP, ...), UDP,
 translation modes other than `OPEN_TRANS_NONE`, JSON. They return `FN_ERR_BAD_CMD` (or
 `FN_ERR_IO_ERROR`) with `fn_network_error` = 146 (not implemented).
 
 Size: HTTP costs about 5.5 KB of code and 0.7 KB of data. A program that only needs TCP compiles
 the library with `-DFN_NO_HTTP` (`make NO_HTTP=1` here): HTTP opens then return "not implemented"
 as before, and the `network_http_*` functions are left out, so a program that uses them does not
-link. The library is then 2.2 KB of code and 1.1 KB of data (most of it the 4 receive buffers);
+link. The library is then 2.7 KB of code and 1.1 KB of data (most of it the 4 receive buffers);
 Retro Game Battle's CPC client `RGBTCP.BIN` is 9.1 KB with `-DFN_NO_HTTP`.
 
 ## Status (2026-11-17)
@@ -100,6 +123,7 @@ Development continues. Issues and ideas are welcome.
   HTTP errors as FujiNet error codes, body of an error response readable.
 - Response headers (`HTTP_CHAN_MODE_COLLECT_HEADERS` / `_GET_HEADERS`), redirects (301/302),
   `OPEN_MODE_HTTP_PUT` (2026-11-17).
+- TCP server: listening, `network_accept`, `network_close_client`, one client at a time (2026-11-17).
 - TCP-only build (`-DFN_NO_HTTP`, about 5.5 KB smaller), used by Retro Game Battle.
 - Test program against a local test server (`make test`, both variants) - in the emulator.
 
@@ -109,14 +133,14 @@ Development continues. Issues and ideas are welcome.
 |---|---|
 | Real CPC + M4 | everything so far runs only in the emulator (CPCSyntaxError with M4 emulation) |
 | UDP | depends on what the M4 firmware offers - to be checked |
-| Listening (TCP server) | the same; needed for e.g. a BBS on the CPC |
 | TNFS | FujiNet's file protocol, runs over UDP - after UDP |
 | Translation modes, JSON | `OPEN_TRANS_*` other than NONE, FujiNet's JSON parser |
 | HTTPS | not possible on the M4 (no TLS) - only with FujiNet hardware (see the next goal) |
 
 ## Build and test
 
-Needs the CPC development kit next to this folder (its setup script run).
+Needs the CPC development kit next to this folder (its setup script run), from commit f0c2222
+on (`m4_listen` in its M4 library).
 
 ```sh
 make            # build/fujinet-network.rel + build/m4.rel
@@ -127,7 +151,9 @@ make test NO_HTTP=1   # the same without HTTP (-DFN_NO_HTTP)
 Your program: compile with `-I include -I <kit>/lib/m4` (plus `-DFN_NO_HTTP` for TCP only),
 link `build/fujinet-network.rel` and `build/m4.rel`.
 
-The test covers: 3000 bytes received the usual FujiNet way (status, then `read_nb`) and the end
+The test covers: the CPC as a TCP server (T5: two clients one after the other - the test server
+connects to the address the CPC called it from - with the errors before, between and after
+them, the end of the first client, `network_close_client` for the second), 3000 bytes received the usual FujiNet way (status, then `read_nb`) and the end
 of the connection, 2000 bytes sent in pieces of 1-1400 bytes, a blocking read of slowly arriving
 data, a host name, two units at once, re-opening a unit, a refused connection, an unknown host
 and bad devicespecs. HTTP (against an HTTP server in `test/testserver.py`, port 6512): a
